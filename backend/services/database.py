@@ -63,7 +63,7 @@ class DatabaseService:
             print(f"DB Error (add_chat_log): {e}")
 
     async def upsert_word_bank(self, user_id: str, word: str, error_type: str, mastery_level: int, 
-                              ease: float, interval: int, repetitions: int, next_review: datetime):
+                               ease: float, interval: int, repetitions: int, next_review: datetime):
         if not self.client: return
         data = {
             "user_id": user_id,
