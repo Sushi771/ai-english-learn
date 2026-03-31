@@ -360,18 +360,23 @@ function SessionContent() {
   // ── Render AI bubble content with clickable words ───────────────────────
   const renderAIContent = (msg: Message) => (
     <p className="text-xl md:text-2xl font-semibold leading-[1.75] tracking-tight text-on-background select-none">
-      {msg.content.split(/(\s+)/).map((token, i) => {
+      {msg.content.split(/(\s+)/).filter(t => t.length > 0).map((token, i) => {
         const trimmed = token.trim();
-        if (!trimmed) return <React.Fragment key={i}>{token}</React.Fragment>;
+        // If it is just whitespace, render it directly as text to keep it simple
+        if (!trimmed) return <span key={`gap-${msg.id}-${i}`}>{token}</span>;
+        
         const word = normalizeWord(trimmed);
         const isActive = selectedWord === word && wordDrawerMsgId === msg.id;
         return (
           <span
-            key={i}
-            onClick={() => handleWordClick(trimmed, msg.id, msg.content)}
+            key={`word-${msg.id}-${i}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleWordClick(trimmed, msg.id, msg.content);
+            }}
             title="点击查词"
             className={cn(
-              "cursor-pointer rounded-md px-0.5 transition-all duration-150",
+              "cursor-pointer rounded-md px-0.5 transition-all duration-150 inline-block",
               isActive
                 ? "bg-primary/20 text-primary"
                 : "hover:bg-primary/10 hover:text-primary"
