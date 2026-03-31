@@ -84,6 +84,7 @@ class DatabaseService:
     async def get_word_record(self, user_id: str, word: str) -> Optional[Dict]:
         if not self.client: return None
         try:
+            # Case-insensitive or exact match? word_bank UNIQUE(user_id, word) is exact.
             result = self.client.table("word_bank").select("*").eq("user_id", user_id).eq("word", word).execute()
             return result.data[0] if result.data else None
         except Exception as e:
@@ -235,8 +236,24 @@ class DatabaseService:
             print(f"DB Error (get_word_bank): {e}")
             return []
 
+    async def update_word_sm2(self, user_id: str, word: str, sm2_data: Dict[str, Any], status: str):
+        """Update the SM-2 data and status of a word."""
+        if not self.client or not word: return
+        data = {
+            "status": status,
+            "ease": sm2_data["ease"],
+            "interval": sm2_data["interval"],
+            "repetitions": sm2_data["repetitions"],
+            "next_review": sm2_data["next_review"].isoformat(),
+            "updated_at": datetime.now().isoformat()
+        }
+        try:
+            self.client.table("word_bank").update(data).eq("user_id", user_id).eq("word", word).execute()
+        except Exception as e:
+            print(f"DB Error (update_word_sm2): {e}")
+
     async def update_word_status(self, user_id: str, word: str, status: str):
-        """Update the status of a word for a given user."""
+        """Simple update for status only."""
         if not self.client or not word: return
         data = {
             "status": status,

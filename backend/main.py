@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 # Internal Services
 from services.llm import gateway
 # from services.speech import speech_service  # Phase 2: Azure removed
-# from services.scheduler import scheduler    # Phase 2: SM-2 demoted
+from services.scheduler import scheduler    # Phase 2: SM-2 enabled
 from services.database import db_service
 from services.review import review_service
 from services.scenario_engine import scenario_engine
@@ -248,7 +248,36 @@ async def update_word_bank_status(
         
     try:
         # In this project, word_id is often the word string itself
-        await db_service.update_word_status(uid, word_id, status)
+        # Fetch existing record for this word
+        record = await db_service.get_word_record(uid, word_id)
+        
+        # Mapping frontend status to quality scores
+        # 'mastered' (Easy) -> 5
+        # 'reviewing' (Hard) -> 3
+        # 'new' (Forgot) -> 1
+        quality_map = {"mastered": 5, "reviewing": 3, "new": 1}
+        quality = quality_map.get(status, 3) 
+        
+        if record:
+            # Use existing stats if available, otherwise use defaults
+            current_ease = record.get("ease", 2.5) or 2.5
+            current_interval = record.get("interval", 0) or 0
+            current_reps = record.get("repetitions", 0) or 0
+            
+            # Calculate next review with SM-2
+            sm2_result = scheduler.get_next_review(
+                quality=quality,
+                ease=current_ease,
+                interval=current_interval,
+                repetitions=current_reps
+            )
+            
+            # Update word with complete SM-2 data
+            await db_service.update_word_sm2(uid, word_id, sm2_result, status)
+        else:
+            # Fallback if record not found (shouldn't happen with valid word_id)
+            await db_service.update_word_status(uid, word_id, status)
+            
         return {"success": True}
     except Exception as e:
         print(f"Error updating word status: {e}")

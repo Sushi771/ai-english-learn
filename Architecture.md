@@ -24,6 +24,7 @@
 ### 模块职责
 - **Task Controller**: 路由分发与会话生命周期管理。
 - **Logic Engine**: 封装 AI Response 生成、语法纠错提取及词汇自动标记。
+- **SM2 Scheduler**: 核心复习算法引擎，负责计算复习间隔（interval）与熟练度（ease）。
 - **Level Manager**: 维护用户当前 Level 与难度自适应参数。
 
 ## 4. AI 服务层 (AI Service Layer)
@@ -33,23 +34,25 @@
     - **Prompt 策略**: 根据用户 Level 标签动态注入 `System Prompt`。例如，A1 级别会强制模型使用简单时态及高频词汇；B2 级别会启用复合句式及更丰富的习语表达。
 - **实时纠错逻辑**: 模型在生成对话回复的同时，被要求在特定 JSON 字段或特定标记位输出用户上一句的语法/用词优化建议。
 
-## 5. 数据持久化 (Data Persistence)
-项目目前采用 **SQLite** 进行本地存储，未来计划迁移至 **Supabase** 进行云端同步。
-### 表结构草案
-- **users**: `id`, `user_level` (A1-B2), `xp`, `last_login_at`
-- **word_bank**: `id`, `user_id`, `word`, `status` ('new' | 'reviewing' | 'mastered'), `last_assessed_at`
-- **chat_logs**: `id`, `session_id`, `role` ('user', 'assistant'), `content`, `correction`, `created_at`
-- **sessions**: `id`, `user_id`, `scenario_query`, `status`
+项目采用 **Supabase** 进行云端数据持久化，支持跨设备同步。
+### 表结构清单
+- **profiles**: `id` (user_id), `name`, `avatar_url`, `total_score`, `learning_streak`, `level`
+- **word_bank**: 
+    - `id`, `user_id`, `word`, `translation`, `example_sentence`
+    - `status` ('new' | 'reviewing' | 'mastered')
+    - **SM-2 Fields**: `ease`, `interval`, `repetitions`, `next_review`
+- **chat_logs**: `id`, `session_id`, `role`, `content`, `translation`, `accuracy_score`
+- **sessions**: `id`, `user_id`, `topic`, `status`, `started_at`
 
 ## 6. MVP 功能清单
-- [x] **基础设施**: Next.js + FastAPI 环境搭建 ✅
+- [x] **基础设施**: Next.js + FastAPI + Supabase 环境搭建 ✅
 - [x] **场景生成**: 关键词动态场景构建 ✅
 - [x] **核心对话**: 文字/语音双模对话集成 ✅
 - [x] **实时纠错**: 基于 Prompt 的语法反馈逻辑 ✅
 - [/] **定级测试**: 渐进难度算法与 Level 映射 🔧
-- [/] **词汇收集**: 自动识别与手动入库流程 🔧
-- [ ] **词库复习**: 三状态闪卡系统 📋 (Phase 2)
-- [ ] **SM-2 算法**: 智能化复习间隔计算 📋 (Phase 2)
+- [x] **词汇收集**: 逐词点击、Mini-Drawer 及一键收藏 ✅
+- [x] **词库复习**: 3D 翻转闪卡系统 ✅
+- [x] **SM-2 算法**: 智能化复习间隔计算与持久化 ✅
 
 ## 7. 已知技术风险
 - **大模型纠错稳定性**: 在特定输入下，AI 可能产生过度纠错或漏报逻辑。
