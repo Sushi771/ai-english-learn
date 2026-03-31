@@ -231,6 +231,29 @@ async def add_to_word_bank(
         print(f"Error adding word: {e}")
         return {"status": "error", "message": str(e)}
 
+@app.patch("/v1/word-bank/{word_id}/status")
+async def update_word_bank_status(
+    word_id: str,
+    data: Dict[str, str],
+    user_id: str = "test_user_id"
+):
+    """Update only the status of a word in the bank."""
+    status = data.get("status")
+    uid = data.get("user_id", user_id)
+    if not status:
+        raise HTTPException(status_code=400, detail="Status is required")
+    
+    if not db_service.is_available():
+        return {"success": True, "offline": True}
+        
+    try:
+        # In this project, word_id is often the word string itself
+        await db_service.update_word_status(uid, word_id, status)
+        return {"success": True}
+    except Exception as e:
+        print(f"Error updating word status: {e}")
+        return {"success": False, "error": str(e)}
+
 # SM-2 background updates demoted to Phase 2
 # async def update_word_bank_background(user_id: str, pronunciation_result: dict):
 #     """Helper to update word bank based on pronunciation assessment scores. (Phase 2)"""

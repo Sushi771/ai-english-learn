@@ -235,4 +235,16 @@ class DatabaseService:
             print(f"DB Error (get_word_bank): {e}")
             return []
 
+    async def update_word_status(self, user_id: str, word: str, status: str):
+        """Update the status of a word for a given user."""
+        if not self.client or not word: return
+        data = {
+            "status": status,
+            "updated_at": datetime.now().isoformat()
+        }
+        try:
+            self.client.table("word_bank").update(data).eq("user_id", user_id).eq("word", word).execute()
+        except Exception as e:
+            print(f"DB Error (update_word_status): {e}")
+
 db_service = DatabaseService()

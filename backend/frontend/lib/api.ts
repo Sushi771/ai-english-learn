@@ -47,7 +47,6 @@ export async function sendAudio(audioBlob: Blob, scenario: string, sessionId: st
   formData.append("scenario", scenario);
   formData.append("level", settings.level);
   
-  // Pass relevant key based on provider
   const key = settings.provider === "openai" ? settings.openaiKey : 
               settings.provider === "gemini" ? settings.geminiKey : 
               settings.zhipuKey;
@@ -76,8 +75,7 @@ export async function sendAudio(audioBlob: Blob, scenario: string, sessionId: st
 }
 
 /**
- * Wrapper for audio processing that matches the (audioBlob, sessionId, scenario, targetText) parameter order
- * used by Challenge.tsx and app/session/page.tsx.
+ * Wrapper for audio processing that matches the (audioBlob, sessionId, scenario, targetText) parameter order.
  */
 export async function processAudio(audioBlob: Blob, sessionId: string, scenario: string, targetText?: string) {
   return sendAudio(audioBlob, scenario, sessionId, targetText);
@@ -109,11 +107,61 @@ export async function sendMessage(text: string, scenario: string, sessionId: str
 }
 
 /**
- * Wrapper for chat messages that matches the (text, sessionId, scenario) parameter order
- * used by app/session/page.tsx.
+ * Wrapper for chat messages that matches the (text, sessionId, scenario) parameter order.
  */
 export async function sendChatMessage(text: string, sessionId: string, scenario: string) {
   return sendMessage(text, scenario, sessionId);
+}
+
+/**
+ * Fetch a concise Chinese translation for a single English word.
+ * Piggybacks on the existing /v1/chat endpoint with a translation prompt.
+ */
+export async function fetchWordTranslation(word: string, currentSessionId: string = "translate_helper"): Promise<string> {
+  const formData = new FormData();
+  formData.append(
+    "text",
+    `Translate this single English word to Chinese. Reply with ONLY the Chinese translation (1-4 characters), no punctuation, no quotes: "${word}"`
+  );
+  formData.append("session_id", currentSessionId);
+  formData.append("scenario", "Word Translation Helper");
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/chat`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) return "—";
+    const data = await response.json();
+    // Strip any surrounding quotes or extra whitespace or trailing periods
+    return (data.response || "—").trim()
+      .replace(/^["']|["']$/g, "")
+      .replace(/[。\.]$/, "");
+  } catch {
+    return "—";
+  }
+}
+
+/**
+ * Add a word to the user's word bank.
+ */
+export async function addToWordBank(
+  word: string,
+  exampleSentence: string,
+  userId: string = "default_user"
+): Promise<{ status: string; word?: string; message?: string }> {
+  const formData = new FormData();
+  formData.append("word", word);
+  formData.append("example_sentence", exampleSentence);
+  formData.append("user_id", userId);
+
+  const response = await fetch(`${API_BASE_URL}/v1/word-bank/add`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) throw new Error("无法添加单词到词库");
+  return response.json();
 }
 
 export async function getDashboardStats() {
@@ -226,6 +274,33 @@ export async function endSession(sessionId: string, score: number = 0) {
 
   if (!response.ok) {
     console.error("Failed to end session");
+  }
+  return response.json();
+}
+
+/**
+ * Word record used in flashcard review.
+ */
+export interface Word {
+  id: string;
+  word: string;
+  translation: string;
+  example: string;
+  status: 'new' | 'reviewing' | 'mastered';
+}
+
+/**
+ * Update the learning status of a word.
+ */
+export async function updateWordStatus(wordId: string, status: 'new' | 'reviewing' | 'mastered', userId: string = "test_user_id") {
+  const response = await fetch(`${API_BASE_URL}/v1/word-bank/${encodeURIComponent(wordId)}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, user_id: userId }),
+  });
+
+  if (!response.ok) {
+    throw new Error("无法更新单词状态");
   }
   return response.json();
 }
