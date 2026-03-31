@@ -51,9 +51,3 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     badges JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ DEFAULT now()
 );
-
--- Enable RLS (Row Level Security) if needed later
--- ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE public.chat_logs ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE public.word_bank ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

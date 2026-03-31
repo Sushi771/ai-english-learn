@@ -134,7 +134,7 @@ class PlacementEngine:
             "A1": "初级 (A1)：能进行最基础的日常沟通。",
             "A2": "入门 (A2)：能处理简单的生活任务和描述。",
             "B1": "提高 (B1)：能在大多数旅行和日常情境中自如表达。",
-            "B2+": "进阶 (B2+)：能进行深入的讨论和复杂的交际。"
+            "B2+": "进阶 (B2+)：能进行深入的讨论 and 复杂的交际。"
         }
         return descriptions.get(level, descriptions["Level 0"])
 
