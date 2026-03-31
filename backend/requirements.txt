@@ -2,7 +2,6 @@ fastapi
 uvicorn
 litellm
 sm-2
-azure-cognitiveservices-speech
 pydantic
 python-dotenv
 python-multipart

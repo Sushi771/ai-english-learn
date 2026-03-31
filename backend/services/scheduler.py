@@ -1,3 +1,4 @@
+# Phase 2 功能 - MVP 阶段暂不启用
 from datetime import datetime, timedelta
 
 class SM2Scheduler:
