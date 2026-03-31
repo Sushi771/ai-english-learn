@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+litellm
+sm-2
+azure-cognitiveservices-speech
+pydantic
+python-dotenv
+python-multipart
+sqlalchemy
+psycopg2-binary
+supabase

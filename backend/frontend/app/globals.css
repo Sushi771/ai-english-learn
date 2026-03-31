@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+@theme {
+  --font-inter: var(--font-inter), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
+  --font-manrope: var(--font-manrope), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+@layer utilities {
+  .max-w-luminary {
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .max-w-luminary-wide {
+    max-width: 1920px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* --- THEME TOKENS: SOLAR LUMINARY (LIGHT MODE) --- */
+:root {
+  --background: #f8faff;
+  --on-background: #060e20;
+  
+  --primary: #7c5dfa;
+  --primary-container: #ba9eff;
+  --on-primary: #ffffff;
+  
+  --secondary: #34b5fa;
+  --secondary-container: #d9f2ff;
+  
+  --surface: #ffffff;
+  --surface-bright: #f0f4ff;
+  --surface-container: #eff3fe;
+  --surface-container-high: #e2e8f0;
+  --surface-container-low: #f8fafc;
+  
+  --outline: #94a3b8;
+  --outline-variant: #cbd5e1;
+  
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(148, 163, 184, 0.2);
+  --glow-opacity: 0.1;
+}
+
+/* --- THEME TOKENS: DIGITAL LUMINARY (DARK MODE) --- */
+.dark {
+  --background: #060e20;
+  --on-background: #dee5ff;
+  
+  --primary: #ba9eff;
+  --primary-container: #ae8dff;
+  --on-primary: #39008c;
+  
+  --secondary: #34b5fa;
+  --secondary-container: #006591;
+  
+  --surface: #060e20;
+  --surface-bright: #1f2b49;
+  --surface-container: #0f1930;
+  --surface-container-high: #141f38;
+  --surface-container-low: #091328;
+  
+  --outline: #6d758c;
+  --outline-variant: #40485d;
+  
+  --glass-bg: rgba(25, 37, 64, 0.6);
+  --glass-border: rgba(109, 117, 140, 0.2);
+  --glow-opacity: 0.15;
+}
+
+body {
+  background: var(--background);
+  color: var(--on-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-inter);
+  overflow-x: hidden;
+  transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s ease;
+  position: relative;
+}
+
+/* --- TACTILE MAGAZINE TEXTURE --- */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.dark body::after {
+  opacity: 0.06;
+}
+
+/* Base Typography Scales */
+.display-hero {
+  font-family: var(--font-manrope), sans-serif;
+  font-weight: 700; /* Reduced from 800 for elegance */
+  letter-spacing: -0.02em; /* Reduced from -0.04em */
+  line-height: 1.1;
+}
+
+/* The Luminary Design System: Adaptive Glassmorphism */
+@utility luminary-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+}
+
+@utility luminary-border {
+  border: 1px solid var(--glass-border);
+}
+
+@utility luminary-card {
+  @apply luminary-glass luminary-border rounded-[2.5rem];
+  transition: all 0.3s ease;
+}
+
+/* Adaptive Glow Effects */
+.glow-primary {
+  box-shadow: 0 0 40px rgba(186, 158, 255, var(--glow-opacity));
+}
+
+.glow-secondary {
+  box-shadow: 0 0 40px rgba(52, 181, 250, var(--glow-opacity));
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-container);
+  opacity: 0.1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Animations Helper */
+.perspective-1000 {
+  perspective: 1000px;
+}

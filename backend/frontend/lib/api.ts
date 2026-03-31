@@ -1,0 +1,231 @@
+const API_BASE_URL = "http://127.0.0.1:8080";
+
+/**
+ * Get user settings for AI providers and progression.
+ */
+export function getAppSettings() {
+  if (typeof window === "undefined") return { level: "A1", provider: "zhipu" };
+  return {
+    level: localStorage.getItem("user_level") || "A1",
+    provider: localStorage.getItem("active_provider") || "zhipu",
+    openaiKey: localStorage.getItem("openai_api_key"),
+    geminiKey: localStorage.getItem("gemini_api_key"),
+    zhipuKey: localStorage.getItem("zhipu_api_key"),
+  };
+}
+
+export async function checkHealth() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/health`);
+    return await response.json();
+  } catch (err) {
+    console.error("Health check failed", err);
+    return { status: "offline" };
+  }
+}
+
+export interface PronunciationWord {
+  word: string;
+  accuracy_score: number;
+  error_type?: string;
+}
+
+export interface PronunciationResult {
+  accuracy_score: number;
+  fluency_score: number;
+  completeness_score: number;
+  prosody_score: number;
+  text?: string;
+  words?: PronunciationWord[];
+}
+
+export async function sendAudio(audioBlob: Blob, scenario: string, sessionId: string = "default-session", targetText?: string) {
+  const settings = getAppSettings();
+  const formData = new FormData();
+  formData.append("audio", audioBlob, "recording.wav");
+  formData.append("session_id", sessionId);
+  formData.append("scenario", scenario);
+  formData.append("level", settings.level);
+  
+  // Pass relevant key based on provider
+  const key = settings.provider === "openai" ? settings.openaiKey : 
+              settings.provider === "gemini" ? settings.geminiKey : 
+              settings.zhipuKey;
+  if (key) formData.append("api_key", key);
+  if (settings.provider) formData.append("provider", settings.provider);
+
+  if (targetText) {
+    formData.append("target_text", targetText);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/v1/process-audio`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let errorMessage = "无法处理语音请求";
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.detail || errorMessage;
+    } catch { }
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}
+
+/**
+ * Wrapper for audio processing that matches the (audioBlob, sessionId, scenario, targetText) parameter order
+ * used by Challenge.tsx and app/session/page.tsx.
+ */
+export async function processAudio(audioBlob: Blob, sessionId: string, scenario: string, targetText?: string) {
+  return sendAudio(audioBlob, scenario, sessionId, targetText);
+}
+
+export async function sendMessage(text: string, scenario: string, sessionId: string = "default-session") {
+  const settings = getAppSettings();
+  const formData = new FormData();
+  formData.append("text", text);
+  formData.append("session_id", sessionId);
+  formData.append("scenario", scenario);
+  formData.append("level", settings.level);
+
+  const key = settings.provider === "openai" ? settings.openaiKey : 
+              settings.provider === "gemini" ? settings.geminiKey : 
+              settings.zhipuKey;
+  if (key) formData.append("api_key", key);
+
+  const response = await fetch(`${API_BASE_URL}/v1/chat`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error("无法发送消息");
+  }
+
+  return response.json();
+}
+
+/**
+ * Wrapper for chat messages that matches the (text, sessionId, scenario) parameter order
+ * used by app/session/page.tsx.
+ */
+export async function sendChatMessage(text: string, sessionId: string, scenario: string) {
+  return sendMessage(text, scenario, sessionId);
+}
+
+export async function getDashboardStats() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/dashboard/stats`);
+    if (!response.ok) throw new Error("Failed to fetch stats");
+    const data = await response.json();
+    return {
+        ...data,
+        level: localStorage.getItem("user_level") || data.level || "A1"
+    }
+  } catch {
+    return {
+      streak: 0,
+      dailyGoalProgress: 0,
+      vocabularyCount: 0,
+      accuracy: 0,
+      totalMinutes: 0,
+      points: 0,
+      level: localStorage.getItem("user_level") || "A1"
+    };
+  }
+}
+
+export async function generateCustomScenario() {
+  const settings = getAppSettings();
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/scenario/generate?level=${settings.level}`);
+    if (!response.ok) throw new Error("Failed to generate scenario");
+    return await response.json();
+  } catch (err) {
+    console.error("Scenario generation error:", err);
+    throw err;
+  }
+}
+
+export async function forgeScenario(query: string) {
+    const settings = getAppSettings();
+    const formData = new FormData();
+    formData.append("query", query);
+    formData.append("level", settings.level);
+
+    const response = await fetch(`${API_BASE_URL}/v1/scenario/forge`, {
+        method: "POST",
+        body: formData,
+    });
+
+    if (!response.ok) throw new Error("无法锻造场景");
+    return await response.json();
+}
+
+export async function getPlacementQuestions() {
+    const response = await fetch(`${API_BASE_URL}/v1/placement/questions`);
+    if (!response.ok) throw new Error("无法获取定级测试题");
+    return await response.json();
+}
+
+export async function evaluatePlacement(submissions: any[]) {
+    const response = await fetch(`${API_BASE_URL}/v1/placement/evaluate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(submissions),
+    });
+
+    if (!response.ok) throw new Error("评估失败");
+    return await response.json();
+}
+
+export async function getFoundationCurriculum() {
+    const response = await fetch(`${API_BASE_URL}/v1/foundation/curriculum`);
+    if (!response.ok) throw new Error("无法获取基础课程");
+    return await response.json();
+}
+
+export async function getRecentSessions() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/dashboard/sessions`);
+    if (!response.ok) throw new Error("Failed to fetch sessions");
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function getChallengeWords() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/challenge/words`);
+    if (!response.ok) throw new Error("Failed to fetch challenge words");
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function getWordBank(userId: string = "test_user_id") {
+  const response = await fetch(`${API_BASE_URL}/v1/word-bank?user_id=${userId}`);
+  if (!response.ok) throw new Error("无法加载词库");
+  return response.json();
+}
+
+export async function endSession(sessionId: string, score: number = 0) {
+  const formData = new FormData();
+  formData.append("session_id", sessionId);
+  formData.append("score", score.toString());
+
+  const response = await fetch(`${API_BASE_URL}/v1/session/end`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    console.error("Failed to end session");
+  }
+  return response.json();
+}
