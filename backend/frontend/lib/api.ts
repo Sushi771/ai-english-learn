@@ -171,11 +171,11 @@ export async function getPlacementQuestions() {
     return await response.json();
 }
 
-export async function evaluatePlacement(submissions: any[]) {
+export async function evaluatePlacement(submissions: any[], userId: string = "default_user") {
     const response = await fetch(`${API_BASE_URL}/v1/placement/evaluate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(submissions),
+        body: JSON.stringify({ user_id: userId, submissions }),
     });
 
     if (!response.ok) throw new Error("评估失败");

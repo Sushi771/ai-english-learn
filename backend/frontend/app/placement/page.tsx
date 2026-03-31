@@ -50,7 +50,7 @@ export default function PlacementTestPage() {
   const submitTest = async (finalAnswers: any[]) => {
     setIsEvaluating(true);
     try {
-      const evalResult = await evaluatePlacement(finalAnswers);
+      const evalResult = await evaluatePlacement(finalAnswers, "default_user");
       setResult(evalResult);
       // Persist level locally
       localStorage.setItem("user_level", evalResult.level);

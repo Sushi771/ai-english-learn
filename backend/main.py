@@ -157,9 +157,29 @@ async def get_placement_questions():
     return await placement_engine.get_test_questions()
 
 @app.post("/v1/placement/evaluate")
-async def evaluate_placement(submissions: List[Dict[str, Any]]):
+async def evaluate_placement(data: Dict[str, Any]):
     """Evaluate the placement test results and return a CEFR level."""
+    submissions = data.get("submissions", [])
+    user_id = data.get("user_id", "default_user")
+    
     result = await placement_engine.evaluate_test(submissions)
+    
+    # Persist the level in the database (profiles table, user_level field)
+    # We follow the naming from the codebase's existing profile logic
+    if db_service.is_available():
+        level = result.get("level", "A1")
+        try:
+            # We update/create profile with the new level
+            # Using user's specific request 'user_level' if possible or falling back
+            db_service.client.table("profiles").upsert({
+                "id": user_id,
+                "user_level": level, 
+                "level": 1, # Base XP level
+                "updated_at": datetime.now().isoformat()
+            }, on_conflict="id").execute()
+        except Exception as e:
+            print(f"Linguistic record persistence error: {e}")
+            
     return result
 
 @app.get("/v1/foundation/curriculum")

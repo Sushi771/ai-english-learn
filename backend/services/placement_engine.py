@@ -39,16 +39,19 @@ class PlacementEngine:
         }
 
     async def get_test_questions(self, initial_level: str = "A1") -> List[Dict[str, Any]]:
-        """Fetch a set of questions for a starting level."""
-        # For simplicity, we return a balanced mix for the mapping
-        all_qs = []
+        """
+        Select 2 questions from each level (A1-B2) to form an 8-question set.
+        Filtered: listening questions are removed for MVP phase.
+        """
+        test_packet = []
         for level in ["A1", "A2", "B1", "B2"]:
-            # Pick 2-3 random questions per level
-            qs = random.sample(self.question_bank[level], min(2, len(self.question_bank[level])))
-            for q in qs:
-                q["level"] = level
-            all_qs.extend(qs)
-        return all_qs
+            level_pool = [q for q in self.question_bank.get(level, []) if q.get("type") != "listening"]
+            if level_pool:
+                sampled = random.sample(level_pool, min(2, len(level_pool)))
+                for q in sampled:
+                    q["level"] = level
+                test_packet.extend(sampled)
+        return test_packet
 
     async def evaluate_test(self, submissions: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
