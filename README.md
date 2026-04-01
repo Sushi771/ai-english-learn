@@ -19,8 +19,8 @@
 
 ## 🚀 Phase 2 Roadmap (未来计划)
 
-- [ ] **SM-2 算法优化**: 启用 `backend/services/scheduler.py` 中的 SuperMemo-2 算法进行动态复习调度。
-- [ ] **Supabase Auth / Clerk**: 实现用户账户系统与跨端数据同步。
+- [x] **SM-2 算法优化**: 启用 `backend/services/scheduler.py` 中的 SuperMemo-2 算法进行动态复习调度。
+- [/] **Supabase Auth / Clerk**: 实现用户账户系统与跨端数据同步 (已完成基础连接修复)。
 - [ ] **多模型联邦支持**: 扩展对 OpenAI, Gemini 以及 DeepSeek 等多模型的高级路由支持。
 - [ ] **多语言流式同步**: 优化 ASR 与 LLM 的流式交互体验，进一步降低延迟。
 
@@ -49,4 +49,4 @@
 - **`agency-senior-developer`**: React 交互与状态管理负责人。
 - **`agency-project-shepherd`**: 文档与 MVP 闭环交付负责人。
 
-*Final MVP Update: 2026-03-31*
+*Final MVP Update: 2026-04-01*

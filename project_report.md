@@ -1,6 +1,6 @@
 # Project Manager: Progress & Issue Report
 
-**Project**: AI English Learning Assistant | **Role**: Senior Project Manager | **Date**: 2026-03-28
+**Project**: AI English Learning Assistant | **Role**: Senior Project Manager | **Date**: 2026-04-01
 
 ## 📊 Sprint Health Comparison (Target vs. Actual)
 
@@ -11,6 +11,7 @@
 | **3. Unified Navigation** | ✅ Done | 100% | Low |
 | **4. End-to-End Success** | ✅ Done | 100% | Low |
 | **5. ASR Stability/Chat** | ✅ Done | 100% | Low |
+| **6. Supabase Persistence**| 🔄 In Progress| 20% | Low |
 
 ### **Issue ID #404: The Protocol Pitfall (file:// context)**
 - **Status**: **RESOLVED** via `ProtocolGuard` implementation.
@@ -19,6 +20,10 @@
 ### **Issue ID #405: ASR Hallucination & Static Mocking**
 - **Status**: **RESOLVED** by removing hardcoded fallback strings and replacing standalone page mocks with real `/v1/chat` logic.
 - **Result**: 100% reliability for both Voice and Text interactions.
+
+### **Issue ID #406: Supabase Connectivity Failure (Incorrect URL)**
+- **Status**: **RESOLVED** via environment variable correction.
+- **Impact**: Fixed a typo in `NEXT_PUBLIC_SUPABASE_URL` (restored missing 'w' in project ID). Restored connectivity to Supabase Auth and Database services. Verified via browser connectivity audit.
 
 ### [x] Task 1: UI Protocol Enforcement (Priority: P0)
 **Result**: `ProtocolGuard` component added and active.

@@ -256,7 +256,14 @@ export async function evaluatePlacement(submissions: any[]) {
         body: JSON.stringify({ submissions }),
     });
 
-    if (!response.ok) throw new Error("评估失败");
+    if (!response.ok) {
+        let detail = "评估失败";
+        try {
+            const errData = await response.json();
+            detail = errData.detail || JSON.stringify(errData);
+        } catch {}
+        throw new Error(`评估失败 (HTTP ${response.status}): ${detail}`);
+    }
     return await response.json();
 }
 

@@ -14,6 +14,7 @@ export default function PlacementTestPage() {
   const [loading, setLoading] = useState(true);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadQuestions() {
@@ -49,13 +50,15 @@ export default function PlacementTestPage() {
 
   const submitTest = async (finalAnswers: any[]) => {
     setIsEvaluating(true);
+    setError(null);
     try {
-      const evalResult = await evaluatePlacement(finalAnswers, "default_user");
+      const evalResult = await evaluatePlacement(finalAnswers);
       setResult(evalResult);
       // Persist level locally
       localStorage.setItem("user_level", evalResult.level);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Evaluation failed", err);
+      setError(err.message || "评估过程中发生了未知错误");
     } finally {
       setIsEvaluating(false);
     }
@@ -65,6 +68,13 @@ export default function PlacementTestPage() {
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">
       <div className="w-12 h-12 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       <p className="text-slate-400 font-medium tracking-wide">Syncing Linguistic Patterns...</p>
+    </div>
+  );
+
+  if (isEvaluating) return (
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">
+      <div className="w-12 h-12 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <p className="text-slate-400 font-medium tracking-wide">Evaluating your responses...</p>
     </div>
   );
 
@@ -92,6 +102,29 @@ export default function PlacementTestPage() {
           className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
         >
           Begin Discovery
+        </button>
+      </motion.div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-md w-full p-10 rounded-3xl bg-slate-900 border border-red-900/50 text-center shadow-2xl"
+      >
+        <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-red-500 border border-red-500/30">
+          <Brain className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-bold mb-2">评估失败</h2>
+        <p className="text-slate-400 text-sm mb-8">{error}</p>
+        
+        <button 
+          onClick={() => router.push("/dashboard")}
+          className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl transition-all border border-slate-700"
+        >
+          返回主页
         </button>
       </motion.div>
     </div>

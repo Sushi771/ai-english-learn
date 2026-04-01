@@ -21,8 +21,10 @@ The project has reached a major milestone by closing the learning loop.
 - **SM-2 Algorithm**: Integrated the **SuperMemo-2** algorithm for intelligent vocabulary scheduling.
 - **Targeted Assessment**: Enhanced `/v1/process-audio` with `target_text` for focused word-level corrective feedback.
 
-## Next Phase: Phase 5 - Persistence & Cloud Sync ☁️
-We are transitioning to implementing **Supabase Auth** and advanced **Learning Analytics** dashboards.
+## Next Phase: Phase 5 - Persistence & Cloud Sync ☁️ [IN PROGRESS]
+We have successfully initiated the transition to **Supabase Auth**. 
+- [x] Corrected Supabase project URL and verified connectivity.
+- [ ] Implement advanced **Learning Analytics** dashboards.
 
 ## Project Structure
 

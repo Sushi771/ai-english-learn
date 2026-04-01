@@ -89,7 +89,7 @@ class PlacementEngine:
         if ai_eval_prompts:
             eval_result = await self._evaluate_translations_with_ai(ai_eval_prompts)
             for res in eval_result:
-                level_scores[res["level"]] += res["score"] # score is 0 to 1
+                level_scores[res["level"]] += res.get("score", 0) # score is 0 to 1
 
         # Determine Final Level
         # Logic: If accuracy > 70% at a level, they pass that level.
@@ -127,8 +127,9 @@ class PlacementEngine:
             for i, result in enumerate(data):
                 result["level"] = items[i]["level"]
             return data
-        except:
+        except Exception as e:
             # Fallback if AI fails: simple fuzzy match or 0
+            print(f"Translation evaluation error: {e}")
             return [{"level": item["level"], "score": 0.5 if len(item['user']) > 5 else 0} for item in items]
 
     def _get_level_description(self, level: str) -> str:

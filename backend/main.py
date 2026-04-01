@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import uvicorn
@@ -19,6 +19,7 @@ from services.review import review_service
 from services.scenario_engine import scenario_engine
 from services.placement_engine import placement_engine
 from services.foundation import foundation_service
+from services.auth_service import get_current_user
 
 load_dotenv()
 
@@ -55,10 +56,10 @@ async def root():
 async def chat(
     session_id: str = Form(...),
     text: str = Form(...),
-    scenario: str = Form("General Conversation")
+    scenario: str = Form("General Conversation"),
+    user_id: str = Depends(get_current_user)
 ):
     """Text-based chat endpoint to handle user typed messages."""
-    user_id = "test_user_id"
     active_session_id = session_id
     if active_session_id == "new":
         active_session_id = await db_service.create_session(user_id, scenario) or str(uuid.uuid4())
@@ -83,13 +84,13 @@ async def chat(
     }
 
 @app.get("/v1/dashboard/stats")
-async def get_dashboard_stats(user_id: str = "test_user_id"):
+async def get_dashboard_stats(user_id: str = Depends(get_current_user)):
     """Get aggregated statistics for the user dashboard."""
     stats = await db_service.get_user_stats(user_id)
     return stats
 
 @app.get("/v1/dashboard/sessions")
-async def get_dashboard_sessions(user_id: str = "test_user_id"):
+async def get_dashboard_sessions(user_id: str = Depends(get_current_user)):
     """Get the most recent learning sessions for the user."""
     sessions = await db_service.get_recent_sessions(user_id)
     return sessions
@@ -97,17 +98,17 @@ async def get_dashboard_sessions(user_id: str = "test_user_id"):
 @app.post("/v1/session/end")
 async def end_session(
     session_id: str = Form(...),
-    score: int = Form(0)
+    score: int = Form(0),
+    user_id: str = Depends(get_current_user)
 ):
     """End a learning session and record the final score."""
-    user_id = "test_user_id"
     await db_service.end_session(session_id, score)
     # Award some XP for completing a session
     await db_service.update_user_score(user_id, points=score)
     return {"status": "success", "session_id": session_id}
 
 @app.get("/v1/challenge/words")
-async def get_challenge_words(user_id: str = "test_user_id", limit: int = 5):
+async def get_challenge_words(user_id: str = Depends(get_current_user), limit: int = 5):
     """Fetch words for the Vocabulary Master Challenge."""
     # Priority: 1. Words due for review 2. Mastered words for reinforcement
     # SM-2 logic demoted to Phase 2, currently using simple fallback/limit
@@ -133,7 +134,7 @@ async def get_challenge_words(user_id: str = "test_user_id", limit: int = 5):
     return due_words
 
 @app.get("/v1/scenario/generate")
-async def generate_custom_scenario(user_id: str = "test_user_id", level: str = "A1"):
+async def generate_custom_scenario(user_id: str = Depends(get_current_user), level: str = "A1"):
     """Generate a dynamic scenario based on the user's weak words."""
     all_words = await db_service.get_word_bank(user_id)
     weak_words = [w["word"] for w in all_words if w.get("mastery_level", 0) < 3]
@@ -146,7 +147,7 @@ async def generate_custom_scenario(user_id: str = "test_user_id", level: str = "
 async def forge_scenario(
     query: str = Form(...),
     level: str = Form("A1"),
-    user_id: str = "test_user_id"
+    user_id: str = Depends(get_current_user)
 ):
     """Forge a scenario from a natural language query."""
     return await scenario_engine.generate_scenario_by_query(user_id, query, level)
@@ -157,30 +158,42 @@ async def get_placement_questions():
     return await placement_engine.get_test_questions()
 
 @app.post("/v1/placement/evaluate")
-async def evaluate_placement(data: Dict[str, Any]):
+async def evaluate_placement(data: Dict[str, Any], user_id: str = Depends(get_current_user)):
     """Evaluate the placement test results and return a CEFR level."""
     submissions = data.get("submissions", [])
-    user_id = data.get("user_id", "default_user")
     
-    result = await placement_engine.evaluate_test(submissions)
-    
-    # Persist the level in the database (profiles table, user_level field)
-    # We follow the naming from the codebase's existing profile logic
-    if db_service.is_available():
-        level = result.get("level", "A1")
-        try:
-            # We update/create profile with the new level
-            # Using user's specific request 'user_level' if possible or falling back
-            db_service.client.table("profiles").upsert({
-                "id": user_id,
-                "user_level": level, 
-                "level": 1, # Base XP level
-                "updated_at": datetime.now().isoformat()
-            }, on_conflict="id").execute()
-        except Exception as e:
-            print(f"Linguistic record persistence error: {e}")
-            
-    return result
+    if not submissions:
+        raise HTTPException(
+            status_code=422,
+            detail="Submissions cannot be empty. Please complete the test before submitting."
+        )
+
+    try:
+        result = await placement_engine.evaluate_test(submissions)
+        
+        # Persist the level in the database (profiles table, user_level field)
+        # We follow the naming from the codebase's existing profile logic
+        if db_service.is_available():
+            level = result.get("level", "A1")
+            try:
+                # We update/create profile with the new level
+                # Using user's specific request 'user_level' if possible or falling back
+                db_service.client.table("profiles").upsert({
+                    "id": user_id,
+                    "user_level": level, 
+                    "level": 1, # Base XP level
+                    "updated_at": datetime.now().isoformat()
+                }, on_conflict="id").execute()
+            except Exception as e:
+                print(f"Linguistic record persistence error: {e}")
+                
+        return result
+    except Exception as e:
+        print(f"Placement evaluation error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal error during evaluation: {str(e)}"
+        )
 
 @app.get("/v1/foundation/curriculum")
 async def get_foundation_curriculum():
@@ -188,7 +201,7 @@ async def get_foundation_curriculum():
     return foundation_service.get_all_lessons()
 
 @app.get("/v1/word-bank")
-async def get_word_bank(user_id: str = "test_user_id"):
+async def get_word_bank(user_id: str = Depends(get_current_user)):
     """Fetch the user's word bank from Supabase."""
     if not db_service.is_available():
         return [
@@ -212,7 +225,7 @@ async def get_word_bank(user_id: str = "test_user_id"):
 async def add_to_word_bank(
     word: str = Form(...),
     example_sentence: str = Form(...),
-    user_id: str = Form(...)
+    user_id: str = Depends(get_current_user)
 ):
     """Stub for adding a word to the bank. Phase 1 implementation."""
     if not db_service.is_available():
@@ -235,11 +248,11 @@ async def add_to_word_bank(
 async def update_word_bank_status(
     word_id: str,
     data: Dict[str, str],
-    user_id: str = "test_user_id"
+    user_id: str = Depends(get_current_user)
 ):
     """Update only the status of a word in the bank."""
     status = data.get("status")
-    uid = data.get("user_id", user_id)
+    uid = user_id # Using the authenticated user_id
     if not status:
         raise HTTPException(status_code=400, detail="Status is required")
     
