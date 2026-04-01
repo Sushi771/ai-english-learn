@@ -1,4 +1,16 @@
 const API_BASE_URL = "http://127.0.0.1:8080";
+import { supabase } from './supabase';
+
+/**
+ * Get authentication headers from the active Supabase session.
+ */
+async function getAuthHeader(): Promise<HeadersInit> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    return { "Authorization": `Bearer ${session.access_token}` };
+  }
+  return {};
+}
 
 /**
  * Get user settings for AI providers and progression.
@@ -57,8 +69,10 @@ export async function sendAudio(audioBlob: Blob, scenario: string, sessionId: st
     formData.append("target_text", targetText);
   }
 
+  const authHeader = await getAuthHeader();
   const response = await fetch(`${API_BASE_URL}/v1/process-audio`, {
     method: "POST",
+    headers: { ...authHeader },
     body: formData,
   });
 
@@ -94,8 +108,10 @@ export async function sendMessage(text: string, scenario: string, sessionId: str
               settings.zhipuKey;
   if (key) formData.append("api_key", key);
 
+  const authHeader = await getAuthHeader();
   const response = await fetch(`${API_BASE_URL}/v1/chat`, {
     method: "POST",
+    headers: { ...authHeader },
     body: formData,
   });
 
@@ -127,8 +143,10 @@ export async function fetchWordTranslation(word: string, currentSessionId: strin
   formData.append("scenario", "Word Translation Helper");
 
   try {
+    const authHeader = await getAuthHeader();
     const response = await fetch(`${API_BASE_URL}/v1/chat`, {
       method: "POST",
+      headers: { ...authHeader },
       body: formData,
     });
     if (!response.ok) return "—";
@@ -147,16 +165,16 @@ export async function fetchWordTranslation(word: string, currentSessionId: strin
  */
 export async function addToWordBank(
   word: string,
-  exampleSentence: string,
-  userId: string = "default_user"
+  exampleSentence: string
 ): Promise<{ status: string; word?: string; message?: string }> {
   const formData = new FormData();
   formData.append("word", word);
   formData.append("example_sentence", exampleSentence);
-  formData.append("user_id", userId);
 
+  const authHeader = await getAuthHeader();
   const response = await fetch(`${API_BASE_URL}/v1/word-bank/add`, {
     method: "POST",
+    headers: { ...authHeader },
     body: formData,
   });
 
@@ -166,7 +184,10 @@ export async function addToWordBank(
 
 export async function getDashboardStats() {
   try {
-    const response = await fetch(`${API_BASE_URL}/v1/dashboard/stats`);
+    const authHeader = await getAuthHeader();
+    const response = await fetch(`${API_BASE_URL}/v1/dashboard/stats`, {
+      headers: { ...authHeader }
+    });
     if (!response.ok) throw new Error("Failed to fetch stats");
     const data = await response.json();
     return {
@@ -189,7 +210,10 @@ export async function getDashboardStats() {
 export async function generateCustomScenario() {
   const settings = getAppSettings();
   try {
-    const response = await fetch(`${API_BASE_URL}/v1/scenario/generate?level=${settings.level}`);
+    const authHeader = await getAuthHeader();
+    const response = await fetch(`${API_BASE_URL}/v1/scenario/generate?level=${settings.level}`, {
+      headers: { ...authHeader }
+    });
     if (!response.ok) throw new Error("Failed to generate scenario");
     return await response.json();
   } catch (err) {
@@ -204,8 +228,10 @@ export async function forgeScenario(query: string) {
     formData.append("query", query);
     formData.append("level", settings.level);
 
+    const authHeader = await getAuthHeader();
     const response = await fetch(`${API_BASE_URL}/v1/scenario/forge`, {
         method: "POST",
+        headers: { ...authHeader },
         body: formData,
     });
 
@@ -219,11 +245,15 @@ export async function getPlacementQuestions() {
     return await response.json();
 }
 
-export async function evaluatePlacement(submissions: any[], userId: string = "default_user") {
+export async function evaluatePlacement(submissions: any[]) {
+    const authHeader = await getAuthHeader();
     const response = await fetch(`${API_BASE_URL}/v1/placement/evaluate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, submissions }),
+        headers: { 
+            "Content-Type": "application/json",
+            ...authHeader
+        },
+        body: JSON.stringify({ submissions }),
     });
 
     if (!response.ok) throw new Error("评估失败");
@@ -238,7 +268,10 @@ export async function getFoundationCurriculum() {
 
 export async function getRecentSessions() {
   try {
-    const response = await fetch(`${API_BASE_URL}/v1/dashboard/sessions`);
+    const authHeader = await getAuthHeader();
+    const response = await fetch(`${API_BASE_URL}/v1/dashboard/sessions`, {
+      headers: { ...authHeader }
+    });
     if (!response.ok) throw new Error("Failed to fetch sessions");
     return await response.json();
   } catch {
@@ -248,7 +281,10 @@ export async function getRecentSessions() {
 
 export async function getChallengeWords() {
   try {
-    const response = await fetch(`${API_BASE_URL}/v1/challenge/words`);
+    const authHeader = await getAuthHeader();
+    const response = await fetch(`${API_BASE_URL}/v1/challenge/words`, {
+      headers: { ...authHeader }
+    });
     if (!response.ok) throw new Error("Failed to fetch challenge words");
     return await response.json();
   } catch {
@@ -256,8 +292,11 @@ export async function getChallengeWords() {
   }
 }
 
-export async function getWordBank(userId: string = "test_user_id") {
-  const response = await fetch(`${API_BASE_URL}/v1/word-bank?user_id=${userId}`);
+export async function getWordBank() {
+  const authHeader = await getAuthHeader();
+  const response = await fetch(`${API_BASE_URL}/v1/word-bank`, {
+    headers: { ...authHeader }
+  });
   if (!response.ok) throw new Error("无法加载词库");
   return response.json();
 }
@@ -267,8 +306,10 @@ export async function endSession(sessionId: string, score: number = 0) {
   formData.append("session_id", sessionId);
   formData.append("score", score.toString());
 
+  const authHeader = await getAuthHeader();
   const response = await fetch(`${API_BASE_URL}/v1/session/end`, {
     method: "POST",
+    headers: { ...authHeader },
     body: formData,
   });
 
@@ -292,11 +333,15 @@ export interface Word {
 /**
  * Update the learning status of a word.
  */
-export async function updateWordStatus(wordId: string, status: 'new' | 'reviewing' | 'mastered', userId: string = "test_user_id") {
+export async function updateWordStatus(wordId: string, status: 'new' | 'reviewing' | 'mastered') {
+  const authHeader = await getAuthHeader();
   const response = await fetch(`${API_BASE_URL}/v1/word-bank/${encodeURIComponent(wordId)}/status`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status, user_id: userId }),
+    headers: { 
+      "Content-Type": "application/json",
+      ...authHeader
+    },
+    body: JSON.stringify({ status }),
   });
 
   if (!response.ok) {

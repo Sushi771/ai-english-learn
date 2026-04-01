@@ -241,7 +241,7 @@ function SessionContent() {
     if (!selectedWord) return;
     setIsSavingWord(true);
     try {
-      await addToWordBank(selectedWord, wordContextRef.current, "default_user");
+      await addToWordBank(selectedWord, wordContextRef.current);
       setSavedWords(prev => new Set(prev).add(selectedWord));
       setToastMessage(`"${selectedWord}" 已收录到词库 ⭐`);
       setShowToast(true);
