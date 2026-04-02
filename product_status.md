@@ -1,31 +1,32 @@
-# Product Status Report: AI Learning Assistant v2.0
+# Product Status Report: AI Learning Assistant v2.3
 
-**Status**: ✅ Dual-Theme Stable | **Author**: Alex (Product Manager) | **Date**: 2026-04-01
+**Status**: ✅ Multi-model Optimized | **Author**: Alex (Product Manager) | **Date**: 2026-04-02 (v2.3)
 
 ## 1. Executive Summary
-The product has reached **Version 2.0**, marked by the introduction of the **Dual Luminary Design System**. We have successfully evolved beyond a dark-only interface to a professional, all-day learning environment. The technical core is stable, with ASR and LLM loops verified across both "Solar" and "Digital" themes.
+The product has reached **Version 2.3**, marked by the introduction of **Multi-model Architecture**. We have successfully evolved beyond a single-model gateway to a flexible, provider-agnostic system. The technical core now supports **GLM-4 Flash** and **GLM-4.5 Air**, allowing users to choose between balance and speed.
 
-## 2. Recent Success: The Dual-Theme Transition
-We successfully moved from hardcoded hex values to a semantic, variable-driven UI.
-- **Visual Excellence**: The "Solar Luminary" (Light Mode) provides a high-end, editorial feel for daytime study.
-- **Technical Robustness**: Fixed the CSS utility mapping for Tailwind v4, ensuring 100% build stability.
-- **User Agency**: Added a tactile Theme Toggle, allowing users to control their learning environment instantly.
+## 2. Recent Success: Multi-model Selection
+We successfully decoupled the LLM logic from the core gateway.
+- **Visual Excellence**: The "Intelligence Model" selector in Settings provides clear, tactile feedback and persistent state.
+- **Technical Robustness**: Unified all backend calls (Chat, Scenario, Placement) to flow through a single `llm_router.py`.
+- **User Agency**: Users can now choose the "Fast" (4.5 Air) model for a more responsive learning experience.
 
 ## 3. Product Health Metrics
 | Metric | Status | Note |
 |------|--------|------|
-| Theme Consistency | ✅ 100% | Verified via visual audit across 5 core views |
-| Backend Reliability | ✅ Healthy | FastAPI logic verified with latest STT/LLM |
-| UI Responsiveness | ✅ High | Theme-aware Framer Motion transitions stable |
-| Version | ✅ v2.0 | Full documentation synchronization complete |
+| Model Flexibility | ✅ High | Easily switchable between models via Settings |
+| Backend Reliability | ✅ Healthy | FastAPI/JSON Body unified for all chat interactions |
+| UI Responsiveness | ✅ Improved | GLM-4.5 Air drastically reduces first-token latency |
+| Version | ✅ v2.3 | Full documentation synchronization complete |
 
 ## 4. Agents & Ownership
-- **`agency-ux-architect`**: Conceptualized the Solar/Digital duality.
-- **`agency-frontend-developer`**: Executed the theme-aware component refactor.
-- **`agency-project-shepherd`**: Synchronized all PRDs and technical specs.
+- **`agency-backend-architect`**: Conceptualized the `BaseLLMClient` factory.
+- **`agency-frontend-developer`**: Executed the model selection UI and `localStorage` integration.
+- **`agency-technical-writer`**: Synchronized all PRDs and technical specs (v2.3).
 
 ## 5. Current Priority & Progress
-1.  **Phase 8**: Persistence Tier (Supabase Auth & User Cloud Data) - **[STARTED]**.
-    - Fixed URL connectivity issues; verified auth endpoints.
-2.  **Phase 9**: Global Leaderboards & Social Gamification - [PENDING].
+1.  **Phase 3**: Streaming Response (Server-Sent Events) - **[PLANNING]**.
+    - Goal: Reduce perceived latency to <500ms for all models.
+2.  **Phase 4**: Advanced Correction Engine - [PENDING].
+    - Focus: Improving grammar explanation depth and extraction accuracy.
 3.  Expand the **Voice Lab** with more diverse accents (UK/US/AU).

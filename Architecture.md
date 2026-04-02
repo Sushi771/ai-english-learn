@@ -15,6 +15,7 @@
 ### 主要 API 端点
 - `GET /v1/health`: 系统健康检查及 AI 供应商状态。
 - `POST /v1/chat`: 文字/语音对话核心入口，集成纠错（correction 字段）与难度自适应逻辑。
+- `POST /v1/chat`: 文字/语音对话核心入口（JSON Body），集成纠错（correction 字段）与难度自适应逻辑，支持 `model_id` 参数。
 - `GET /v1/placement/questions`: 获取定级测试题目。
 - `POST /v1/placement/evaluate`: 评估测试结果并返回 A1-B2 等级。
 - `GET /v1/word-bank`: 获取用户词库。
@@ -28,7 +29,11 @@
 - **Level Manager**: 维护用户当前 Level 与难度自适应参数。
 
 ## 4. AI 服务层 (AI Service Layer)
-- **模型驱动**: 统一采用 **智谱 GLM-4.6** 模型，支持 Streaming 响应以降低响应延迟。
+- **多模型路由 (Multi-model Router)**: 
+    - 引入 `llm_router.py` 工厂模式，解耦特定供应商 SDK。
+    - 统一模型接口 `BaseLLMClient`，实现热切换。
+    - 支持模型：**GLM-4 Flash** (默认/均衡), **GLM-4.5 Air** (高性能/低延迟)。
+    - 为未来集成 OpenAI、Google Gemini、DeepSeek 预留了 `PlaceholderClient` 扩展位。
 - **难度自适应逻辑**: 
     - **定级路径**: 用户完成 5 道交互式题目 -> 系统计算得分偏移 -> 映射至 A1/A2/B1/B2 标签。
     - **Prompt 策略**: 根据用户 Level 标签动态注入 `System Prompt`。例如，A1 级别会强制模型使用简单时态及高频词汇；B2 级别会启用复合句式及更丰富的习语表达。

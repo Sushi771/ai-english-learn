@@ -1,6 +1,6 @@
 # Project Manager: Progress & Issue Report
 
-**Project**: AI English Learning Assistant | **Role**: Senior Project Manager | **Date**: 2026-04-01
+**Project**: AI English Learning Assistant | **Role**: Senior Project Manager | **Date**: 2026-04-02 (v2.3)
 
 ## 📊 Sprint Health Comparison (Target vs. Actual)
 
@@ -11,34 +11,28 @@
 | **3. Unified Navigation** | ✅ Done | 100% | Low |
 | **4. End-to-End Success** | ✅ Done | 100% | Low |
 | **5. ASR Stability/Chat** | ✅ Done | 100% | Low |
-| **6. Supabase Persistence**| 🔄 In Progress| 20% | Low |
+| **6. Supabase Persistence**| ✅ Done | 100% | Low |
+| **7. Multi-model Support** | ✅ Done | 100% | Low |
 
-### **Issue ID #404: The Protocol Pitfall (file:// context)**
-- **Status**: **RESOLVED** via `ProtocolGuard` implementation.
-- **Impact**: The user is now automatically redirected to `http://localhost:3000`, ensuring all network features (Audio/LLM) operate without CORS violations.
+### **Issue ID #407: Refactoring NameError (missing imports)**
+- **Status**: **RESOLVED**.
+- **Impact**: Added `os`, `uvicorn`, and `typing` imports to `llm.py` and `main.py` after splitting the logic. Restored server stability.
 
-### **Issue ID #405: ASR Hallucination & Static Mocking**
-- **Status**: **RESOLVED** by removing hardcoded fallback strings and replacing standalone page mocks with real `/v1/chat` logic.
-- **Result**: 100% reliability for both Voice and Text interactions.
+### **Issue ID #408: API Body Protocol Inconsistency**
+- **Status**: **RESOLVED**.
+- **Impact**: Standardized `/v1/chat` to use JSON Body instead of FormData, aligning with modern SPA standards and allowing for easier object nesting. Corrected `api.ts` to match. 
 
-### **Issue ID #406: Supabase Connectivity Failure (Incorrect URL)**
-- **Status**: **RESOLVED** via environment variable correction.
-- **Impact**: Fixed a typo in `NEXT_PUBLIC_SUPABASE_URL` (restored missing 'w' in project ID). Restored connectivity to Supabase Auth and Database services. Verified via browser connectivity audit.
+### [x] Task 4: Multi-Model Router Implementation (Priority: P0)
+**Result**: `llm_router.py` logic successfully deployed. Support for GLM-4 Flash (Default) and GLM-4.5 Air confirmed.
 
-### [x] Task 1: UI Protocol Enforcement (Priority: P0)
-**Result**: `ProtocolGuard` component added and active.
-
-### [x] Task 2: Defensive Launcher Implementation (Priority: P0)
-**Result**: `launcher.py` and `start_project.ps1` optimized for auto-launch on valid host.
-
-### [x] Task 3: Dual-Mode Chat Integration (Priority: P1) [NEW]
-**Result**: Real-time text chat implemented using Zhipu AI gateway.
+### [x] Task 5: Model Selection Frontend (Priority: P1)
+**Result**: Settings page UI updated with model cards, including "Coming Soon" states for OpenAI/Gemini/DeepSeek.
 
 ## 🤖 Agentic Collaboration
-- **`agency-backend-architect`**: Structured the unified chat/audio processing pipeline.
-- **`agency-frontend-developer`**: Developed the responsive dual-mode UI and auto-scroll logic.
-- **`agency-ai-engineer`**: Optimized the Zhipu model parameters to eliminate empty-audio hallucinations.
-- **`agency-evidence-collector`**: Performed automated E2E validation.
+- **`agency-backend-architect`**: Structured the unified `BaseLLMClient` factory.
+- **`agency-frontend-developer`**: Implemented the model selection UI and `localStorage` persistence.
+- **`agency-technical-writer`**: Updated all architectural and status documentation (Architecture, APISpecs, Changelog, Status).
+- **`agency-evidence-collector`**: Verified end-to-end connectivity with the new GLM-4.5 Air endpoint.
 
 ---
-**Summary**: The project has reached full operational stability. The "Ethereal Scholar" experience is now consistent across both voice and text channels.
+**Summary**: The project has successfully delivered Phase 2 (Multi-model Support). The system is now architecture-ready for any future LLM providers.
