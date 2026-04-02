@@ -1,25 +1,15 @@
-import litellm
 import os
 from typing import List, Dict, Any, Optional
-from dotenv import load_dotenv
-
-load_dotenv()
+from .llm_router import get_llm_client
 
 class ModelGateway:
     def __init__(self):
-        # Default model roles
-        self.fast_streamer = os.getenv("DEFAULT_FAST_MODEL", "zhipuai/glm-4-flash")
-        self.linguistic_master = "anthropic/claude-3-5-sonnet-20240620"
-        self.memory_guardian = "gemini/gemini-1.5-pro"
+        # Default model
+        self.default_model = os.getenv("DEFAULT_MODEL", "glm-4-flash")
+        self.fast_streamer = self.default_model
+        self.linguistic_master = self.default_model
+        self.memory_guardian = self.default_model
         
-        # Load default keys for system-level fallback
-        self.default_keys = {
-            "zhipu": os.getenv("ZHIPUAI_API_KEY"),
-            "openai": os.getenv("OPENAI_API_KEY"),
-            "gemini": os.getenv("GEMINI_API_KEY"),
-            "anthropic": os.getenv("ANTHROPIC_API_KEY")
-        }
-
     def _get_system_prompt(self, role: str, scenario: str = "General", level: str = "A1") -> str:
         level_hints = {
             "Level 0": "使用最简单的英语单词，必须附带中文翻译，语速极慢，多用问候语。",
@@ -46,31 +36,13 @@ class ModelGateway:
         level: str = "A1",
         review_words: List[str] = None,
         stream: bool = False,
-        api_key: Optional[str] = None,
-        provider: Optional[str] = None
+        api_key: Optional[str] = None, # Refactored out but kept for signature
+        provider: Optional[str] = None # Refactored out but kept for signature
     ) -> Any:
-        # Determine target model and provider
-        target_model = model or getattr(self, role, self.fast_streamer)
+        # Determine target model: priority for 'model' param, then role defaults
+        target_model = model or getattr(self, role, self.default_model)
         
-        # Determine API Key: Priority 1: Request param, Priority 2: System Env
-        active_key = api_key
-        if not active_key:
-            if "glm" in target_model.lower() or provider == "zhipu":
-                active_key = self.default_keys["zhipu"]
-            elif "gpt" in target_model.lower() or provider == "openai":
-                active_key = self.default_keys["openai"]
-            elif "gemini" in target_model.lower() or provider == "gemini":
-                active_key = self.default_keys["gemini"]
-            elif "claude" in target_model.lower() or provider == "anthropic":
-                active_key = self.default_keys["anthropic"]
-
-        # Ensure LiteLLM prefixing
-        if "glm" in target_model.lower() and "zai/" not in target_model.lower():
-            target_model = f"zai/{target_model.split('/')[-1]}"
-        
-        print(f"[DEBUG] Gateway Request: model={target_model}, level={level}, key_provided={bool(api_key)}")
-
-        kwargs = {"api_key": active_key} if active_key else {}
+        print(f"[DEBUG] Gateway (Router) Request: model={target_model}, role={role}, level={level}")
 
         try:
             system_prompt = self._get_system_prompt(role, scenario, level)
@@ -80,24 +52,15 @@ class ModelGateway:
             # Insert or replace system prompt
             new_messages = [{"role": "system", "content": system_prompt}] + [m for m in messages if m["role"] != "system"]
 
-            if stream:
-                return await litellm.acompletion(
-                    model=target_model,
-                    messages=new_messages,
-                    stream=True,
-                    **kwargs
-                )
+            # Use the new centralized router
+            client = get_llm_client(target_model)
+            return await client.chat(new_messages, stream=stream)
             
-            response = await litellm.acompletion(
-                model=target_model,
-                messages=new_messages,
-                **kwargs
-            )
-            return response.choices[0].message.content
         except Exception as e:
-            print(f"ModelGateway Error: {e}")
+            print(f"ModelGateway (Router) Error: {e}")
+            # Fallback to flash only if it wasn't already flash
             if "glm-4-flash" not in target_model:
-                return await self.get_chat_response(messages, model="zai/glm-4-flash", level=level, role=role, api_key=api_key)
+                return await self.get_chat_response(messages, model="glm-4-flash", level=level, role=role)
             raise e
 
     async def get_transcription(self, audio_file_path: str, api_key: Optional[str] = None) -> str:

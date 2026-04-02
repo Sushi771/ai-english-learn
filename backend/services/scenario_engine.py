@@ -1,14 +1,15 @@
 import json
-from typing import List, Dict, Any
-from .llm import gateway
+from typing import List, Dict, Any, Optional
+from .llm_router import get_llm_client
+import os
 
 class ScenarioEngine:
-    async def generate_scenario(self, user_id: str, weak_words: List[str], level: str = "A1") -> Dict[str, Any]:
+    async def generate_scenario(self, user_id: str, weak_words: List[str], level: str = "A1", model_id: Optional[str] = None) -> Dict[str, Any]:
         """Generate a custom scenario using the provided weak words and target level."""
         limited_words = weak_words[:5]
-        return await self.generate_scenario_by_query(user_id, f"使用以下词汇的日常场景: {', '.join(limited_words)}", level)
+        return await self.generate_scenario_by_query(user_id, f"使用以下词汇的日常场景: {', '.join(limited_words)}", level, model_id=model_id)
 
-    async def generate_scenario_by_query(self, user_id: str, query: str, level: str = "A1") -> Dict[str, Any]:
+    async def generate_scenario_by_query(self, user_id: str, query: str, level: str = "A1", model_id: Optional[str] = None) -> Dict[str, Any]:
         """Generate a custom scenario from a user query and level."""
         
         # Level-specific instructions
@@ -53,7 +54,9 @@ class ScenarioEngine:
         ]
         
         try:
-            response = await gateway.get_chat_response(messages, role="linguistic_master")
+            # Direct use of llm_router
+            client = get_llm_client(model_id)
+            response = await client.chat(messages)
             
             clean_json = response
             if "```json" in response:

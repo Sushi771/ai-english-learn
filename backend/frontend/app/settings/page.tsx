@@ -13,6 +13,7 @@ export default function SettingsPage() {
     zhipu: ""
   });
   const [userLevel, setUserLevel] = useState("A1");
+  const [preferredModel, setPreferredModel] = useState("glm-4-flash");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function SettingsPage() {
       zhipu: localStorage.getItem("zhipu_api_key") || ""
     });
     setUserLevel(localStorage.getItem("user_level") || "A1");
+    setPreferredModel(localStorage.getItem("preferred_model") || "glm-4-flash");
   }, []);
 
   const handleSave = () => {
@@ -35,10 +37,23 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 2000);
   };
 
+  const handleModelChange = (modelId: string) => {
+    setPreferredModel(modelId);
+    localStorage.setItem("preferred_model", modelId);
+  };
+
   const providers = [
     { id: "zhipu", name: "Zhipu AI", icon: <Zap className="w-5 h-5" />, desc: "Default balanced model (GLM-4)" },
     { id: "openai", name: "OpenAI", icon: <Brain className="w-5 h-5" />, desc: "Industry standard (GPT-4o)" },
     { id: "gemini", name: "Google Gemini", icon: <Database className="w-5 h-5" />, desc: "Large context specialist" }
+  ];
+
+  const models = [
+    { id: "glm-4-flash", name: "GLM-4 Flash（均衡，默认）", status: "active" },
+    { id: "glm-4.5-air", name: "GLM-4.5 Air（快速）", status: "active" },
+    { id: "openai", name: "OpenAI GPT-4o（敬请期待）", status: "disabled" },
+    { id: "deepseek", name: "DeepSeek（敬请期待）", status: "disabled" },
+    { id: "gemini", name: "Gemini（敬请期待）", status: "disabled" }
   ];
 
   return (
@@ -109,6 +124,39 @@ export default function SettingsPage() {
                       <div className="font-medium">{p.name}</div>
                       <div className="text-xs text-slate-400">{p.desc}</div>
                     </div>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Model Selection */}
+            <section>
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Brain className="w-5 h-5 text-indigo-400" /> Intelligence Model
+              </h2>
+              <div className="grid grid-cols-1 gap-2">
+                {models.map((m) => (
+                  <button
+                    key={m.id}
+                    disabled={m.status === "disabled"}
+                    onClick={() => handleModelChange(m.id)}
+                    className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
+                      preferredModel === m.id 
+                      ? "bg-indigo-600/10 border-indigo-500" 
+                      : "bg-slate-900 border-slate-800"
+                    } ${m.status === "disabled" ? "opacity-40 cursor-not-allowed grayscale" : "hover:border-slate-700"}`}
+                  >
+                    <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full ${preferredModel === m.id ? "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" : "bg-slate-700"}`} />
+                        <span className={`text-sm font-medium ${preferredModel === m.id ? "text-indigo-100" : "text-slate-400"}`}>
+                            {m.name}
+                        </span>
+                    </div>
+                    {preferredModel === m.id && (
+                        <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20">
+                            Active
+                        </span>
+                    )}
                   </button>
                 ))}
               </div>

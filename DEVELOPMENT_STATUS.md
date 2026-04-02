@@ -15,7 +15,7 @@
 - [x] **Luminary 2.0 精修 (Phase 7.5)**: 完成谐音排版、背景噪点纹理与超宽屏格栅脊柱适配。
 
 ## 3. 下一阶段路线图 (Phase 8 Roadmap)
-- [ ] **多端登录体系 (Auth)**: 集成 Supabase Auth / Clerk 实现云端数据同步。
+- [x] **多端登录体系 (Auth)**: 集成 Supabase Auth (ES256 JWKS) 实现全量验证。
 - [ ] **多模型智囊团**: 增加本地 Ollama 驱动与 GPT-4o/Claude-3.5 切换控制台。
 - [ ] **社交激励与勋章**: 实现基于学习数据的勋章成就系统。
 

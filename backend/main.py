@@ -1,14 +1,19 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-import uvicorn
+import logging
 import os
 import asyncio
 import json
 import uuid
+import uvicorn
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
+
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+# Configure global logging
+logging.basicConfig(level=logging.INFO)
 
 # Internal Services
 from services.llm import gateway
@@ -54,12 +59,18 @@ async def root():
 
 @app.post("/v1/chat")
 async def chat(
-    session_id: str = Form(...),
-    text: str = Form(...),
-    scenario: str = Form("General Conversation"),
+    data: Dict[str, Any],
     user_id: str = Depends(get_current_user)
 ):
-    """Text-based chat endpoint to handle user typed messages."""
+    """Text-based chat endpoint to handle user typed messages (JSON Body)."""
+    session_id = data.get("session_id")
+    text = data.get("text")
+    scenario = data.get("scenario", "General Conversation")
+    model_id = data.get("model_id") or os.getenv("DEFAULT_MODEL", "glm-4-flash")
+
+    if not session_id or not text:
+        raise HTTPException(status_code=422, detail="session_id and text are required")
+
     active_session_id = session_id
     if active_session_id == "new":
         active_session_id = await db_service.create_session(user_id, scenario) or str(uuid.uuid4())
@@ -71,6 +82,7 @@ async def chat(
     
     ai_response = await gateway.get_chat_response(
         messages, 
+        model=model_id,
         role="fast_streamer", 
         scenario=scenario,
         review_words=review_words
@@ -134,23 +146,27 @@ async def get_challenge_words(user_id: str = Depends(get_current_user), limit: i
     return due_words
 
 @app.get("/v1/scenario/generate")
-async def generate_custom_scenario(user_id: str = Depends(get_current_user), level: str = "A1"):
+async def generate_custom_scenario(user_id: str = Depends(get_current_user), level: str = "A1", model_id: Optional[str] = None):
     """Generate a dynamic scenario based on the user's weak words."""
     all_words = await db_service.get_word_bank(user_id)
     weak_words = [w["word"] for w in all_words if w.get("mastery_level", 0) < 3]
     if not weak_words:
         weak_words = ["comprehensive", "innovative", "architect", "significant"]
-    scenario = await scenario_engine.generate_scenario(user_id, weak_words, level=level)
+    
+    effective_model = model_id or os.getenv("DEFAULT_MODEL", "glm-4-flash")
+    scenario = await scenario_engine.generate_scenario(user_id, weak_words, level=level, model_id=effective_model)
     return scenario
 
 @app.post("/v1/scenario/forge")
 async def forge_scenario(
     query: str = Form(...),
     level: str = Form("A1"),
+    model_id: Optional[str] = Form(None),
     user_id: str = Depends(get_current_user)
 ):
-    """Forge a scenario from a natural language query."""
-    return await scenario_engine.generate_scenario_by_query(user_id, query, level)
+    """Forge a scenario from a natural language query (FormData)."""
+    effective_model = model_id or os.getenv("DEFAULT_MODEL", "glm-4-flash")
+    return await scenario_engine.generate_scenario_by_query(user_id, query, level, model_id=effective_model)
 
 @app.get("/v1/placement/questions")
 async def get_placement_questions():
@@ -159,8 +175,9 @@ async def get_placement_questions():
 
 @app.post("/v1/placement/evaluate")
 async def evaluate_placement(data: Dict[str, Any], user_id: str = Depends(get_current_user)):
-    """Evaluate the placement test results and return a CEFR level."""
+    """Evaluate the placement test results and return a CEFR level (JSON Body)."""
     submissions = data.get("submissions", [])
+    model_id = data.get("model_id") or os.getenv("DEFAULT_MODEL", "glm-4-flash")
     
     if not submissions:
         raise HTTPException(
@@ -169,7 +186,7 @@ async def evaluate_placement(data: Dict[str, Any], user_id: str = Depends(get_cu
         )
 
     try:
-        result = await placement_engine.evaluate_test(submissions)
+        result = await placement_engine.evaluate_test(submissions, model_id=model_id)
         
         # Persist the level in the database (profiles table, user_level field)
         # We follow the naming from the codebase's existing profile logic

@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2024-04-01
+
+### Fixed
+- **JWT Authentication:** Migrated from `python-jose` to `PyJWT` and implemented JWKS public key verification to support Supabase ES256 algorithm.
+- **Placement Evaluation:** 
+    - Frontend now correctly reads and displays detailed backend error messages.
+    - Removed redundant `default_user` parameter in `evaluatePlacement` call.
+    - Improved backend validation for empty submissions and added robust exception handling.
+    - Fixed potential `KeyError` in `PlacementEngine` scoring logic.
+
+### Added
+- **UI States:** Added `isEvaluating` loading state and detailed error UI to the placement test page.
+- **Diagnostics:** Created `diagnose_jwt.py` for debugging Supabase authentication issues.
+- **Security:** Added `.env.local` to `.gitignore`.
+
 ## [2.1.0] - 2024-04-01
 
 ### Fixed

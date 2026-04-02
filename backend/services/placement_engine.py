@@ -1,7 +1,7 @@
 import json
 import random
 from typing import List, Dict, Any, Optional
-from .llm import gateway
+from .llm_router import get_llm_client
 
 class PlacementEngine:
     """
@@ -53,7 +53,7 @@ class PlacementEngine:
                 test_packet.extend(sampled)
         return test_packet
 
-    async def evaluate_test(self, submissions: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def evaluate_test(self, submissions: List[Dict[str, Any]], model_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Evaluate the test and determine the CEFR level.
         submissions: list of { "level": "A1", "type": "choice", "user_answer": "...", "correct_answer": "..." }
@@ -87,7 +87,7 @@ class PlacementEngine:
         
         # Batch Evaluate Translation via AI
         if ai_eval_prompts:
-            eval_result = await self._evaluate_translations_with_ai(ai_eval_prompts)
+            eval_result = await self._evaluate_translations_with_ai(ai_eval_prompts, model_id=model_id)
             for res in eval_result:
                 level_scores[res["level"]] += res.get("score", 0) # score is 0 to 1
 
@@ -109,7 +109,7 @@ class PlacementEngine:
             "description": self._get_level_description(final_level)
         }
 
-    async def _evaluate_translations_with_ai(self, items: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+    async def _evaluate_translations_with_ai(self, items: List[Dict[str, str]], model_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """Use LLM to grade translation accuracy."""
         prompt = "Assess the following Chinese-to-English translations. Return a JSON list with 'score' (0.0 to 1.0) and 'feedback' for each. 1.0 means perfect native expression, 0.5 means basic meaning conveyed but ungrammatical.\n\n"
         for i, item in enumerate(items):
@@ -117,7 +117,10 @@ class PlacementEngine:
         
         try:
             messages = [{"role": "system", "content": "You are a professional English examiner."}, {"role": "user", "content": prompt}]
-            response = await gateway.get_chat_response(messages, role="linguistic_master")
+            
+            # Direct use of llm_router
+            client = get_llm_client(model_id)
+            response = await client.chat(messages)
             
             # Rough cleanup for JSON
             clean_json = response

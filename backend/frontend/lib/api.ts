@@ -97,22 +97,24 @@ export async function processAudio(audioBlob: Blob, sessionId: string, scenario:
 
 export async function sendMessage(text: string, scenario: string, sessionId: string = "default-session") {
   const settings = getAppSettings();
-  const formData = new FormData();
-  formData.append("text", text);
-  formData.append("session_id", sessionId);
-  formData.append("scenario", scenario);
-  formData.append("level", settings.level);
-
-  const key = settings.provider === "openai" ? settings.openaiKey : 
-              settings.provider === "gemini" ? settings.geminiKey : 
-              settings.zhipuKey;
-  if (key) formData.append("api_key", key);
+  const model_id = localStorage.getItem("preferred_model") ?? "glm-4-flash";
+  
+  const payload = {
+    text: text,
+    session_id: sessionId,
+    scenario: scenario,
+    level: settings.level,
+    model_id: model_id
+  };
 
   const authHeader = await getAuthHeader();
   const response = await fetch(`${API_BASE_URL}/v1/chat`, {
     method: "POST",
-    headers: { ...authHeader },
-    body: formData,
+    headers: { 
+      ...authHeader,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -134,20 +136,23 @@ export async function sendChatMessage(text: string, sessionId: string, scenario:
  * Piggybacks on the existing /v1/chat endpoint with a translation prompt.
  */
 export async function fetchWordTranslation(word: string, currentSessionId: string = "translate_helper"): Promise<string> {
-  const formData = new FormData();
-  formData.append(
-    "text",
-    `Translate this single English word to Chinese. Reply with ONLY the Chinese translation (1-4 characters), no punctuation, no quotes: "${word}"`
-  );
-  formData.append("session_id", currentSessionId);
-  formData.append("scenario", "Word Translation Helper");
+  const model_id = localStorage.getItem("preferred_model") ?? "glm-4-flash";
+  const payload = {
+    text: `Translate this single English word to Chinese. Reply with ONLY the Chinese translation (1-4 characters), no punctuation, no quotes: "${word}"`,
+    session_id: currentSessionId,
+    scenario: "Word Translation Helper",
+    model_id: model_id
+  };
 
   try {
     const authHeader = await getAuthHeader();
     const response = await fetch(`${API_BASE_URL}/v1/chat`, {
       method: "POST",
-      headers: { ...authHeader },
-      body: formData,
+      headers: { 
+        ...authHeader,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload),
     });
     if (!response.ok) return "—";
     const data = await response.json();
@@ -224,9 +229,11 @@ export async function generateCustomScenario() {
 
 export async function forgeScenario(query: string) {
     const settings = getAppSettings();
+    const model_id = localStorage.getItem("preferred_model") ?? "glm-4-flash";
     const formData = new FormData();
     formData.append("query", query);
     formData.append("level", settings.level);
+    formData.append("model_id", model_id);
 
     const authHeader = await getAuthHeader();
     const response = await fetch(`${API_BASE_URL}/v1/scenario/forge`, {
@@ -246,6 +253,7 @@ export async function getPlacementQuestions() {
 }
 
 export async function evaluatePlacement(submissions: any[]) {
+    const model_id = localStorage.getItem("preferred_model") ?? "glm-4-flash";
     const authHeader = await getAuthHeader();
     const response = await fetch(`${API_BASE_URL}/v1/placement/evaluate`, {
         method: "POST",
@@ -253,7 +261,7 @@ export async function evaluatePlacement(submissions: any[]) {
             "Content-Type": "application/json",
             ...authHeader
         },
-        body: JSON.stringify({ submissions }),
+        body: JSON.stringify({ submissions, model_id }),
     });
 
     if (!response.ok) {
