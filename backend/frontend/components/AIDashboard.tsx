@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { getDashboardStats, getRecentSessions, forgeScenario } from "@/lib/api";
+import { getDashboardStats, getRecentSessions, forgeScenario, getLearningStreak } from "@/lib/api";
 import Challenge from "./Challenge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -50,6 +50,8 @@ const AIDashboard = ({ onStartSession, onOpenWordBank }: AIDashboardProps) => {
   const [showChallenge, setShowChallenge] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isForging, setIsForging] = useState(false);
+  const [streakData, setStreakData] = useState<{ streak: number; total_days: number } | null>(null);
+  const [loadingStreak, setLoadingStreak] = useState(true);
 
   useEffect(() => {
     const level = localStorage.getItem("user_level");
@@ -60,14 +62,18 @@ const AIDashboard = ({ onStartSession, onOpenWordBank }: AIDashboardProps) => {
 
     const fetchData = async () => {
       try {
-        const [statsData, sessions] = await Promise.all([
+        const [statsData, sessions, streak] = await Promise.all([
           getDashboardStats(),
-          getRecentSessions()
+          getRecentSessions(),
+          getLearningStreak()
         ]);
         setStats(statsData);
         setRecentSessions(sessions);
+        setStreakData(streak);
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
+      } finally {
+        setLoadingStreak(false);
       }
     };
     fetchData();
@@ -293,7 +299,9 @@ const AIDashboard = ({ onStartSession, onOpenWordBank }: AIDashboardProps) => {
                     </div>
                     <div className="p-4 rounded-3xl bg-[var(--on-background)]/5 border luminary-border">
                         <div className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Streak</div>
-                        <div className="text-xl font-bold text-[var(--primary)]">12d</div>
+                        <div className="text-xl font-bold text-[var(--primary)]">
+                            {loadingStreak ? "—d" : `${streakData?.streak ?? 0}d`}
+                        </div>
                     </div>
                 </div>
 

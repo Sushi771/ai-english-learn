@@ -187,6 +187,15 @@ async def chat(
         "session_id": active_session_id
     }
 
+@app.post("/v1/session/create")
+async def create_session(
+    data: Dict[str, Any],
+    user_id: str = Depends(get_current_user)
+):
+    scenario = data.get("scenario", "General Conversation")
+    session_id = await db_service.create_session(user_id, scenario)
+    return {"session_id": session_id}
+
 @app.post("/v1/tts")
 async def text_to_speech(data: Dict[str, str]):
     """Generate high-quality neural TTS from text."""
@@ -214,6 +223,13 @@ async def get_dashboard_stats(user_id: str = Depends(get_current_user)):
     """Get aggregated statistics for the user dashboard."""
     stats = await db_service.get_user_stats(user_id)
     return stats
+
+@app.get("/v1/stats/streak")
+async def get_streak(user_id: str = Depends(get_current_user)):
+    """Fetch user learning streak."""
+    print(f"DEBUG - JWT user_id: {user_id}")
+    result = await db_service.get_learning_streak(user_id)
+    return result
 
 @app.get("/v1/dashboard/sessions")
 async def get_dashboard_sessions(user_id: str = Depends(get_current_user)):

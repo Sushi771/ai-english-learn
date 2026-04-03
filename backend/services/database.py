@@ -21,6 +21,7 @@ class DatabaseService:
         return self.client is not None
 
     async def create_session(self, user_id: str, topic: str) -> Optional[str]:
+        print(f"[DEBUG] create_session called: user_id={user_id}, topic={topic}")
         if not self.client: return None
         data = {
             "user_id": user_id,
@@ -251,6 +252,63 @@ class DatabaseService:
             self.client.table("word_bank").update(data).eq("user_id", user_id).eq("word", word).execute()
         except Exception as e:
             print(f"DB Error (update_word_sm2): {e}")
+
+    async def get_learning_streak(self, user_id: str) -> Dict[str, int]:
+        """
+        Calculate current learning streak based on sessions started_at field.
+        """
+        if not self.client:
+            return {"streak": 0, "total_days": 0}
+
+        try:
+            # Fetch dates of activity for the user
+            res = self.client.table("sessions") \
+                .select("started_at") \
+                .eq("user_id", user_id) \
+                .order("started_at", desc=True) \
+                .execute()
+            
+            if not res.data:
+                return {"streak": 0, "total_days": 0}
+
+            # Extract distinct dates
+            processed_dates = []
+            for row in res.data:
+                try:
+                    # Handle Z and ISO formats
+                    dt_str = row["started_at"].replace('Z', '+00:00')
+                    processed_dates.append(datetime.fromisoformat(dt_str).date())
+                except:
+                    continue
+            
+            dates = sorted(list(set(processed_dates)), reverse=True)
+            print(f"[DEBUG] dates={dates}, today={date.today()}")
+
+            if not dates:
+                return {"streak": 0, "total_days": 0}
+
+            today = date.today()
+            yesterday = today - timedelta(days=1)
+
+            # Rule: If dates[0] is neither today nor yesterday, streak is 0
+            if dates[0] != today and dates[0] != yesterday:
+                return {"streak": 0, "total_days": len(dates)}
+
+            streak = 0
+            current_check = dates[0]
+            
+            # Start counting from the most recent date
+            for d in dates:
+                if d == current_check:
+                    streak += 1
+                    current_check -= timedelta(days=1)
+                else:
+                    break
+
+            return {"streak": streak, "total_days": len(dates)}
+        except Exception as e:
+            print(f"DB Error (get_learning_streak): {e}")
+            return {"streak": 0, "total_days": 0}
 
     async def update_word_status(self, user_id: str, word: str, status: str):
         """Simple update for status only."""

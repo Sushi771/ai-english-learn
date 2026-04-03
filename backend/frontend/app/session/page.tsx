@@ -18,7 +18,7 @@ import {
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import ProtocolGuard from '../../components/ProtocolGuard';
-import { processAudio, sendMessageStream, fetchWordTranslation, addToWordBank, PronunciationWord } from '@/lib/api';
+import { processAudio, sendMessageStream, fetchWordTranslation, addToWordBank, PronunciationWord, createSession } from '@/lib/api';
 import { useTTS } from '@/hooks/useTTS';
 import Notification from '@/components/Notification';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -231,6 +231,12 @@ function SessionContent() {
     }
 
     setMessages([{ id: 1, role: 'ai', content: initialMsg }]);
+
+    // 在 useEffect 初始化时：
+    (async () => {
+      const sid = await createSession(customData?.title || rawScenario || "General Conversation");
+      setSessionId(sid);
+    })();
   }, [searchParams]);
 
   useEffect(() => {

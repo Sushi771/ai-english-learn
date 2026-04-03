@@ -290,6 +290,20 @@ export async function getDashboardStats() {
   }
 }
 
+export async function getLearningStreak(): Promise<{ streak: number; total_days: number }> {
+  try {
+    const authHeader = await getAuthHeader();
+    const response = await fetch(`${API_BASE_URL}/v1/stats/streak`, {
+      headers: { ...authHeader }
+    });
+    if (!response.ok) throw new Error("Failed to fetch streak");
+    return await response.json();
+  } catch (err) {
+    console.error("Streak fetch error:", err);
+    return { streak: 0, total_days: 0 };
+  }
+}
+
 export async function generateCustomScenario() {
   const settings = getAppSettings();
   try {
@@ -410,6 +424,18 @@ export async function endSession(sessionId: string, score: number = 0) {
     console.error("Failed to end session");
   }
   return response.json();
+}
+
+export async function createSession(scenario: string): Promise<string> {
+  const authHeader = await getAuthHeader();
+  const response = await fetch(`${API_BASE_URL}/v1/session/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader },
+    body: JSON.stringify({ scenario }),
+  });
+  if (!response.ok) return "new";
+  const data = await response.json();
+  return data.session_id || "new";
 }
 
 /**
