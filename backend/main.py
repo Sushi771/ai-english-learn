@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 # Configure global logging
 logging.basicConfig(level=logging.INFO)
@@ -67,6 +67,9 @@ async def chat(
     text = data.get("text")
     scenario = data.get("scenario", "General Conversation")
     model_id = data.get("model_id") or os.getenv("DEFAULT_MODEL", "glm-4-flash")
+    raw_stream = data.get("stream", False)
+    stream = raw_stream is True or str(raw_stream).lower() == "true"
+    print(f"[DEBUG] /v1/chat stream={stream!r} raw={raw_stream!r} model={model_id}")
 
     if not session_id or not text:
         raise HTTPException(status_code=422, detail="session_id and text are required")
@@ -80,12 +83,52 @@ async def chat(
 
     messages = [{"role": "user", "content": text}]
     
+    if stream:
+        async def event_generator():
+            full_response = ""
+            try:
+                # 1. Send start marker immediately
+                yield "data: [START]\n\n"
+                
+                # 2. Get the stream from gateway
+                # Note: gateway.get_chat_response is async, but it returns an AsyncGenerator
+                # when stream=True. We must await the call but iterate the generator.
+                generator = await gateway.get_chat_response(
+                    messages, 
+                    model=model_id,
+                    role="fast_streamer", 
+                    scenario=scenario,
+                    review_words=review_words,
+                    stream=True
+                )
+                
+                async for chunk in generator:
+                    if chunk.startswith("[ERROR]"):
+                        yield f"data: {chunk}\n\n"
+                    else:
+                        full_response += chunk
+                        yield f"data: {chunk}\n\n"
+                
+                # 3. Send done marker
+                yield "data: [DONE]\n\n"
+                
+                # 4. Success: Log the assistant response to DB
+                if full_response and "[ERROR]" not in full_response:
+                    await db_service.add_chat_log(active_session_id, "assistant", full_response)
+            except Exception as e:
+                print(f"[API] Streaming Error: {e}")
+                yield f"data: [ERROR] Internal Server Error: {str(e)}\n\n"
+
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+    # 原有非流式路径保持向后兼容
     ai_response = await gateway.get_chat_response(
         messages, 
         model=model_id,
         role="fast_streamer", 
         scenario=scenario,
-        review_words=review_words
+        review_words=review_words,
+        stream=False
     )
 
     await db_service.add_chat_log(active_session_id, "assistant", ai_response)

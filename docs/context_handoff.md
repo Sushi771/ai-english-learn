@@ -75,4 +75,5 @@ MCP: filesystem、github、puppeteer、memory、fetch、sequential-thinking、sq
 ## Phase 3 下一步（按优先级）
 1. ✅ Supabase Auth（已完成）
 2. ✅ 多模型支持（已完成）
-3. 🔲 流式响应优化（Streaming Response）
+3. ✅ 流式响应优化（Streaming Response — 实时增量更新，包含打字机光标界面）
+4. 🔲 语音评测细节打磨

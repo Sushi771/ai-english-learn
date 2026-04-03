@@ -14,8 +14,7 @@
 ## 3. 后端模块 (Backend)
 ### 主要 API 端点
 - `GET /v1/health`: 系统健康检查及 AI 供应商状态。
-- `POST /v1/chat`: 文字/语音对话核心入口，集成纠错（correction 字段）与难度自适应逻辑。
-- `POST /v1/chat`: 文字/语音对话核心入口（JSON Body），集成纠错（correction 字段）与难度自适应逻辑，支持 `model_id` 参数。
+- `POST /v1/chat`: 文字/语音对话核心入口（JSON Body），支持 SSE (Server-Sent Events) 流式输出，集成纠错与难度自适应逻辑。
 - `GET /v1/placement/questions`: 获取定级测试题目。
 - `POST /v1/placement/evaluate`: 评估测试结果并返回 A1-B2 等级。
 - `GET /v1/word-bank`: 获取用户词库。
@@ -30,9 +29,9 @@
 
 ## 4. AI 服务层 (AI Service Layer)
 - **多模型路由 (Multi-model Router)**: 
-    - 引入 `llm_router.py` 工厂模式，解耦特定供应商 SDK。
+    - 引入 `llm_router.py` 工厂模式，解耦特定供应商 SDK，支持 `chat()` (非流式) 与 `stream_chat()` (流式异步生成器) 接口。
     - 统一模型接口 `BaseLLMClient`，实现热切换。
-    - 支持模型：**GLM-4 Flash** (默认/均衡), **GLM-4.5 Air** (高性能/低延迟)。
+    - 支持模型：**GLM-4 Flash** (默认/均衡), **GLM-4.5 Air** (高性能/低延时/原生流式)。
     - 为未来集成 OpenAI、Google Gemini、DeepSeek 预留了 `PlaceholderClient` 扩展位。
 - **难度自适应逻辑**: 
     - **定级路径**: 用户完成 5 道交互式题目 -> 系统计算得分偏移 -> 映射至 A1/A2/B1/B2 标签。
@@ -58,6 +57,7 @@
 - [x] **认证系统**: Supabase Auth (ES256 JWKS) 完整接入 ✅
 - [x] **词库复习**: 3D 翻转闪卡系统 ✅
 - [x] **SM-2 算法**: 智能化复习间隔计算与持久化 ✅
+- [x] **流式响应**: 基于 SSE 的毫秒级首字延迟优化 (Typing Cursor) ✅
 
 ## 7. 已知技术风险
 - **大模型纠错稳定性**: 在特定输入下，AI 可能产生过度纠错或漏报逻辑。

@@ -131,6 +131,91 @@ export async function sendChatMessage(text: string, sessionId: string, scenario:
   return sendMessage(text, scenario, sessionId);
 }
 
+export async function sendMessageStream(
+  text: string,
+  scenario: string,
+  sessionId: string = "default-session",
+  onChunk: (chunk: string) => void,
+  onDone: (fullText: string) => void,
+  onError?: (err: Error) => void
+): Promise<void> {
+  const settings = getAppSettings();
+  // Try preferred_model first, fallback to selected_model_id, then glm-4-flash
+  const model_id = localStorage.getItem("preferred_model") || 
+                  localStorage.getItem("selected_model_id") || 
+                  "glm-4-flash";
+  
+  const payload = {
+    text,
+    session_id: sessionId,
+    scenario,
+    level: settings.level,
+    model_id,
+    stream: true
+  };
+
+  try {
+    const authHeader = await getAuthHeader();
+    const response = await fetch(`${API_BASE_URL}/v1/chat`, {
+      method: "POST",
+      headers: { 
+        ...authHeader,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || "无法连接到 AI 服务");
+    }
+
+    if (!response.body) {
+      throw new Error("响应体为空");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let accumulated_full_text = "";
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      
+      // Keep the last incomplete line in the buffer
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine.startsWith("data: ")) continue;
+
+        const content = trimmedLine.slice(6);
+        if (content === "[START]") continue;
+        if (content === "[DONE]") {
+          onDone(accumulated_full_text);
+          return;
+        }
+        if (content.startsWith("[ERROR]")) {
+          throw new Error(content);
+        }
+        
+        accumulated_full_text += content;
+        onChunk(content);
+      }
+    }
+  } catch (err) {
+    if (onError) {
+      onError(err as Error);
+    } else {
+      console.error("[API] Streaming error:", err);
+    }
+  }
+}
+
 /**
  * Fetch a concise Chinese translation for a single English word.
  * Piggybacks on the existing /v1/chat endpoint with a translation prompt.

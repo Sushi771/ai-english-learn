@@ -17,7 +17,7 @@ import {
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import ProtocolGuard from '../../components/ProtocolGuard';
-import { processAudio, sendChatMessage, fetchWordTranslation, addToWordBank, PronunciationWord } from '@/lib/api';
+import { processAudio, sendMessageStream, fetchWordTranslation, addToWordBank, PronunciationWord } from '@/lib/api';
 import { useTTS } from '@/hooks/useTTS';
 import Notification from '@/components/Notification';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -175,8 +175,35 @@ function SessionContent() {
   const audioChunksRef = useRef<Blob[]>([]);
   const { speak, isSpeaking } = useTTS();
 
+  /**
+   * Typewriter animation for AI messages
+   * @param targetMsgId The message id to update
+   * @param fullText The entire text to type out
+   * @param onComplete Optional callback when done
+   */
+  const typewriterAnimate = (targetMsgId: number, fullText: string, onComplete?: () => void) => {
+    let currentText = "";
+    const words = fullText.split(" ");
+    let i = 0;
+
+    const interval = setInterval(() => {
+      if (i < words.length) {
+        currentText += (i === 0 ? "" : " ") + words[i];
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === targetMsgId ? { ...m, content: currentText } : m
+          )
+        );
+        i++;
+      } else {
+        clearInterval(interval);
+        if (onComplete) onComplete();
+      }
+    }, 40); // 40ms per word for smooth flow
+  };
+
   useEffect(() => {
-    const topic = searchParams.get('topic') || '咖啡馆点餐练习';
+    const topic = searchParams.get('scenario') || searchParams.get('topic') || '咖啡馆点餐练习';
     const custom = !!searchParams.get('isCustom') || !!sessionStorage.getItem('custom_scenario');
     setRawScenario(topic);
     setIsCustom(custom);
@@ -342,24 +369,46 @@ function SessionContent() {
     setUserInput('');
     setIsProcessing(true);
 
-    const newMessage: Message = { id: Date.now(), role: 'user', content: textToSend };
-    setMessages(prev => [...prev, newMessage]);
+    const userMsg: Message = { id: Date.now(), role: 'user', content: textToSend };
+    const aiMsgId = Date.now() + 1;
+    const placeholderMsg: Message = { id: aiMsgId, role: 'ai', content: '' };
+    
+    setMessages(prev => [...prev, userMsg, placeholderMsg]);
 
     try {
-      const result = await sendChatMessage(textToSend, sessionId, customData?.title || rawScenario);
-      setSessionId(result.session_id);
-      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', content: result.response }]);
-      speak(result.response);
+      await sendMessageStream(
+        textToSend,
+        customData?.title || rawScenario,
+        sessionId,
+        (chunk) => {
+          // Real-time incremental update
+          setMessages(prev => prev.map(m => 
+            m.id === aiMsgId ? { ...m, content: m.content + chunk } : m
+          ));
+        },
+        (fullText) => {
+          // Success: finalize processing and start audio
+          setMessages(prev => prev.map(m => 
+            m.id === aiMsgId ? { ...m, content: fullText } : m
+          ));
+          speak(fullText);
+          setIsProcessing(false);
+        },
+        async (err) => {
+          console.error("Streaming chat failed, falling back to legacy:", err);
+          // Fallback to non-streaming behavior if needed (can be implemented if sendChatMessage is still exported)
+          setIsProcessing(false);
+        }
+      );
     } catch (err) {
-      console.error("Text chat failed:", err);
-    } finally {
+      console.error("Text chat wrapper error:", err);
       setIsProcessing(false);
     }
   };
 
   // ── Render AI bubble content with clickable words ───────────────────────
-  const renderAIContent = (msg: Message) => (
-    <p className="text-xl md:text-2xl font-semibold leading-[1.75] tracking-tight text-on-background select-none">
+  const renderAIContent = (msg: Message, isLast: boolean) => (
+    <div className="text-xl md:text-2xl font-semibold leading-[1.75] tracking-tight text-on-background select-none">
       {msg.content.split(/(\s+)/).filter(t => t.length > 0).map((token, i) => {
         const trimmed = token.trim();
         // If it is just whitespace, render it directly as text to keep it simple
@@ -386,7 +435,17 @@ function SessionContent() {
           </span>
         );
       })}
-    </p>
+      
+      {/* Typing Cursor */}
+      {isLast && isProcessing && (
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0] }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+          className="inline-block w-1.5 h-6 ml-1 bg-primary/60 align-middle rounded-full"
+        />
+      )}
+    </div>
   );
   // ────────────────────────────────────────────────────────────────────────
 
@@ -459,7 +518,7 @@ function SessionContent() {
               isUltraWide && isHUDExpanded ? "max-w-4xl ml-auto mr-12" : "max-w-4xl mx-auto"
             )}>
               <AnimatePresence mode="popLayout">
-                {messages.map((msg) => (
+                {messages.map((msg, index) => (
                   <motion.div
                     key={msg.id}
                     layout
@@ -481,7 +540,7 @@ function SessionContent() {
                         )}>
                         {/* AI messages: clickable words. User messages: plain text. */}
                         {msg.role === 'ai' ? (
-                          renderAIContent(msg)
+                          renderAIContent(msg, index === messages.length - 1)
                         ) : (
                           <p className={cn(
                             "text-xl md:text-2xl font-semibold leading-[1.5] tracking-tight",

@@ -1,4 +1,4 @@
-# AI English Assistant (智学英语 AI) v2.2 - MVP Completion 🎯
+# AI English Assistant (智学英语 AI) v2.3 - Streaming & Multi-Model 🎯
 
 一款专为中国用户打造的、基于 **智谱 AI (Zhipu AI)** 与 **Azure 发音评测** 技术的端到端英语学习助手。系统采用全新的 **"Luminary 2.0" (双生灵光)** 视觉系统，提供超宽屏适配、纸质触感与社论级排版体验。
 
@@ -20,9 +20,9 @@
 ## 🚀 Phase 2 Roadmap (未来计划)
 
 - [x] **SM-2 算法优化**: 启用 `backend/services/scheduler.py` 中的 SuperMemo-2 算法进行动态复习调度。
-- [/] **Supabase Auth / Clerk**: 实现用户账户系统与跨端数据同步 (已完成基础连接修复)。
-- [ ] **多模型联邦支持**: 扩展对 OpenAI, Gemini 以及 DeepSeek 等多模型的高级路由支持。
-- [ ] **多语言流式同步**: 优化 ASR 与 LLM 的流式交互体验，进一步降低延迟。
+- [x] **Supabase Auth Integration**: 实现用户账户系统与跨端数据同步 (JWKS 验证)。
+- [x] **多模型联邦支持**: 路由支持 GLM-4-Flash / GLM-4.5-Air，具备模型选择持久化功能。
+- [x] **全链路流式同步**: 优化 LLM 流式交互，实现“随收随显”真流式体验，保留关键空格与格式。
 
 ## 🛠️ 技术栈 (Tech Stack)
 
@@ -49,4 +49,4 @@
 - **`agency-senior-developer`**: React 交互与状态管理负责人。
 - **`agency-project-shepherd`**: 文档与 MVP 闭环交付负责人。
 
-*Final MVP Update: 2026-04-01*
+*Final v2.3 Update: 2026-04-02*

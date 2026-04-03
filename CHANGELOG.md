@@ -1,6 +1,20 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+    
+## [2.4.0] - 2026-04-03
+    
+### Added
+- **Streaming Response (Phase 3):** 
+    - Full SSE support in `/v1/chat` via `FastAPI StreamingResponse`.
+    - `stream_chat()` generator interface in `llm_router.py` for all clients.
+    - Persistent typing cursor UI in the session page using `framer-motion`.
+- **Robust Parsing:** Line-based buffering for SSE streams in `api.ts` to prevent character fragmentation.
+- **UI UX:** Auto-scrolling chat history during active streaming.
+    
+### Changed
+- **Backend Flow:** User messages are now persisted before the stream starts, and AI responses as soon as the stream finishes successfully.
+- **Error Handling:** Centralized stream error reporting using `[ERROR]` protocol within the data stream.
 
 ## [2.3.0] - 2026-04-02
 

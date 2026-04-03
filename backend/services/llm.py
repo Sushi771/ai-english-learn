@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union, AsyncGenerator
 from .llm_router import get_llm_client
 
 class ModelGateway:
@@ -21,7 +21,7 @@ class ModelGateway:
         hint = level_hints.get(level, level_hints["A1"])
         
         base_prompts = {
-            "fast_streamer": f"你是一位英语外教。场景：{scenario}。难度：{level} ({hint})。始终用英语回复，除非用户完全听不懂或要求中文。保持鼓励性。",
+            "fast_streamer": f"你是一位专业英语外教。场景：{scenario}。难度：{level} ({hint})。1. 始终用英语回复，除非用户完全听不懂。2. 只回复外教的部分，严禁模拟、代答或预设学生的对话内容。3. 保持鼓励性，适时引导用户开口。4. 必须确保单词之间有正常的空格，标点后面跟空格，严禁将单词连在一起。",
             "linguistic_master": f"你是一位资深英语专家。请分析用户的输入，提供针对 {level} 水平的改进建议。重点纠正语法并推荐更地道的表达。",
             "memory_guardian": "你是一位学习分析师。分析用户的对话历史，总结其能力提升情况。"
         }
@@ -36,9 +36,9 @@ class ModelGateway:
         level: str = "A1",
         review_words: List[str] = None,
         stream: bool = False,
-        api_key: Optional[str] = None, # Refactored out but kept for signature
-        provider: Optional[str] = None # Refactored out but kept for signature
-    ) -> Any:
+        api_key: Optional[str] = None, 
+        provider: Optional[str] = None
+    ) -> Union[str, AsyncGenerator[str, None]]:
         # Determine target model: priority for 'model' param, then role defaults
         target_model = model or getattr(self, role, self.default_model)
         
@@ -54,7 +54,10 @@ class ModelGateway:
 
             # Use the new centralized router
             client = get_llm_client(target_model)
-            return await client.chat(new_messages, stream=stream)
+            if stream:
+                return client.stream_chat(new_messages)
+            else:
+                return await client.chat(new_messages)
             
         except Exception as e:
             print(f"ModelGateway (Router) Error: {e}")

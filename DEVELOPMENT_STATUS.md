@@ -17,13 +17,14 @@
 - [x] **多模型智囊团 (Phase 2)**: 引入 `llm_router.py`，支持 GLM-4 Flash / 4.5 Air 动态切换。 ✅
 
 ## 3. 下一阶段路线图 (Phase 3 Roadmap)
-- [ ] **流式响应优化 (Streaming)**: 全面启用 SSE 以降低首字延迟。
+- [x] **流式响应优化 (Streaming)**: 全面启用 SSE 以降低首字延迟。 ✅
 - [ ] **增强纠错逻辑**: 优化 Prompt 提取纠错信息的准确度。
 - [ ] **社交激励与勋章**: 实现基于学习数据的勋章成就系统。
 
 ## 4. 最近更新记录 (Recent Updates)
 - [x] **Multi-model Router (v2.3)**: 实现统一的模型调用接口，支持在设置页面动态切换 GLM-4 Flash / GLM-4.5 Air。
-- [x] **API 协议统一**: `/v1/chat` 改用 JSON Body 传输，提升了数据结构的扩展性。
+- [x] **Streaming Response Optimization (v2.4)**: 引入 SSE (Server-Sent Events) 实现毫秒级首字延迟，优化了 API 接口处理 `AsyncGenerator` 的能力。
+- [x] **UI Interactivity Refine**: 配合流式输出增加了打字机光标 (Typing Cursor)，并保持了气泡单词点击查词的交互一致性。
 - [x] **Auth 架构升级**: 切换至 JWKS 公钥验签模式，增强了与 Supabase Auth 的集成稳定性。
 
 ## 5. 参与代理 (Active Agents)
