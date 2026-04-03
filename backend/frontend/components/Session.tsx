@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 import { useTTS } from "@/hooks/useTTS";
-import { sendMessage, sendAudio } from "@/lib/api";
+import { sendMessage, sendMessageStream, sendAudio } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -43,6 +43,7 @@ export default function Session({ scenario, onExit }: SessionProps) {
     },
   ]);
   const [userInput, setUserInput] = useState("");
+  const [sessionId, setSessionId] = useState<string>("new");
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -76,6 +77,32 @@ export default function Session({ scenario, onExit }: SessionProps) {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isRecording]);
+
+  const typewriterAnimate = (
+    targetId: string,
+    fullText: string,
+    onComplete: () => void
+  ) => {
+    const CHARS_PER_TICK = 6;
+    const TICK_MS = 18;
+    let pos = 0;
+
+    const tick = () => {
+      pos = Math.min(pos + CHARS_PER_TICK, fullText.length);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === targetId ? { ...m, content: fullText.slice(0, pos) } : m
+        )
+      );
+      if (pos < fullText.length) {
+        setTimeout(tick, TICK_MS);
+      } else {
+        onComplete();
+      }
+    };
+
+    setTimeout(tick, 0);
+  };
 
   const startRecording = async () => {
     try {
@@ -120,23 +147,58 @@ export default function Session({ scenario, onExit }: SessionProps) {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const aiMsgId = (Date.now() + 1).toString();
+    const placeholderMsg: Message = { 
+      id: aiMsgId, 
+      role: "assistant", 
+      content: "", 
+      timestamp: new Date() 
+    };
+
+    setMessages((prev) => [...prev, userMsg, placeholderMsg]);
     setUserInput("");
     setIsProcessing(true);
 
     try {
-      const response = await sendMessage(userInput, scenario);
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response.content,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      speak(response.content);
+      await sendMessageStream(
+        userInput,
+        scenario,
+        sessionId,
+        (chunk) => {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === aiMsgId ? { ...m, content: m.content + chunk } : m
+            )
+          );
+        },
+        (fullText) => {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === aiMsgId ? { ...m, content: fullText } : m
+            )
+          );
+          speak(fullText);
+          setIsProcessing(false);
+        },
+        async (err) => {
+          console.error("Streaming error, falling back:", err);
+          try {
+            const response = await sendMessage(userInput, scenario);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === aiMsgId ? { ...m, content: response.response } : m
+              )
+            );
+            speak(response.response);
+          } catch (fallbackErr) {
+            console.error("Fallback error:", fallbackErr);
+          } finally {
+            setIsProcessing(false);
+          }
+        }
+      );
     } catch (err) {
       console.error("Send message error:", err);
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -144,7 +206,7 @@ export default function Session({ scenario, onExit }: SessionProps) {
   const handleSendAudio = async (blob: Blob) => {
     setIsProcessing(true);
     try {
-      const result = await sendAudio(blob, scenario);
+      const result = await sendAudio(blob, scenario, sessionId);
 
       const userMsg: Message = {
         id: Date.now().toString(),
@@ -238,7 +300,11 @@ export default function Session({ scenario, onExit }: SessionProps) {
                   </div>
 
                   <p className="text-lg leading-relaxed font-medium mb-4 relative z-10">
-                    {msg.content}
+                    {msg.role === "assistant" && msg.content === "" ? (
+                      <span className="inline-block w-0.5 h-5 bg-primary animate-pulse ml-1 rounded-full" />
+                    ) : (
+                      msg.content
+                    )}
                   </p>
                   <div className={cn(
                     "flex items-center gap-6 relative z-10",
@@ -280,18 +346,6 @@ export default function Session({ scenario, onExit }: SessionProps) {
               </motion.div>
             ))}
           </AnimatePresence>
-          {isProcessing && (
-            <motion.div 
-               initial={{ opacity: 0 }}
-               animate={{ opacity: 1 }}
-               className="flex justify-start"
-            >
-               <div className="luminary-glass luminary-border rounded-[2rem] rounded-tl-none p-8 flex items-center gap-4">
-                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary animate-pulse">AI 正在深度思考中...</span>
-               </div>
-            </motion.div>
-          )}
           <div ref={messagesEndRef} />
         </div>
       </main>

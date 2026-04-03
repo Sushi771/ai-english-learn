@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-inter: var(--font-inter), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
-  --font-manrope: var(--font-manrope), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-inter: var(--font-inter), "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-manrope: var(--font-manrope), "Manrope", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
 
 @layer utilities {
@@ -11,19 +11,14 @@
     margin-left: auto;
     margin-right: auto;
   }
-  .max-w-luminary-wide {
-    max-width: 1920px;
-    margin-left: auto;
-    margin-right: auto;
-  }
 }
 
-/* --- THEME TOKENS: SOLAR LUMINARY (LIGHT MODE) --- */
 :root {
-  --background: #f8faff;
-  --on-background: #060e20;
+  /* Solar Luminary (Light Mode) */
+  --background: #f0f0fd;
+  --on-background: #0c0e17;
   
-  --primary: #7c5dfa;
+  --primary: #694fa9;
   --primary-container: #ba9eff;
   --on-primary: #ffffff;
   
@@ -31,42 +26,42 @@
   --secondary-container: #d9f2ff;
   
   --surface: #ffffff;
-  --surface-bright: #f0f4ff;
-  --surface-container: #eff3fe;
-  --surface-container-high: #e2e8f0;
-  --surface-container-low: #f8fafc;
+  --surface-bright: #f8f8ff;
+  --surface-container: #f0f0fd;
+  --surface-container-high: #e2e2f0;
+  --surface-container-low: #fafaff;
   
-  --outline: #94a3b8;
-  --outline-variant: #cbd5e1;
+  --outline: #737580;
+  --outline-variant: #aaaab7;
   
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(148, 163, 184, 0.2);
+  --glass-bg: rgba(255, 255, 255, 0.4);
+  --glass-border: rgba(170, 170, 183, 0.15);
   --glow-opacity: 0.1;
 }
 
-/* --- THEME TOKENS: DIGITAL LUMINARY (DARK MODE) --- */
 .dark {
-  --background: #060e20;
-  --on-background: #dee5ff;
+  /* Digital Luminary (Dark Mode) - THE PRIMARY THEME */
+  --background: #0c0e17;
+  --on-background: #f0f0fd;
   
   --primary: #ba9eff;
-  --primary-container: #ae8dff;
-  --on-primary: #39008c;
+  --primary-container: #ac91f1;
+  --on-primary: #371975;
   
   --secondary: #34b5fa;
   --secondary-container: #006591;
   
-  --surface: #060e20;
-  --surface-bright: #1f2b49;
-  --surface-container: #0f1930;
-  --surface-container-high: #141f38;
-  --surface-container-low: #091328;
+  --surface: #0c0e17;
+  --surface-bright: #282b3a;
+  --surface-container: #171924;
+  --surface-container-high: #1c1f2b;
+  --surface-container-low: #11131d;
   
-  --outline: #6d758c;
-  --outline-variant: #40485d;
+  --outline: #737580;
+  --outline-variant: #464752;
   
-  --glass-bg: rgba(25, 37, 64, 0.6);
-  --glass-border: rgba(109, 117, 140, 0.2);
+  --glass-bg: rgba(34, 37, 50, 0.4);
+  --glass-border: rgba(70, 71, 82, 0.15);
   --glow-opacity: 0.15;
 }
 
@@ -81,7 +76,7 @@ body {
   position: relative;
 }
 
-/* --- TACTILE MAGAZINE TEXTURE --- */
+/* Atmospheric Texture */
 body::after {
   content: "";
   position: fixed;
@@ -90,27 +85,31 @@ body::after {
   height: 100%;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.04;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
-.dark body::after {
-  opacity: 0.06;
-}
-
-/* Base Typography Scales */
-.display-hero {
-  font-family: var(--font-manrope), sans-serif;
-  font-weight: 700; /* Reduced from 800 for elegance */
-  letter-spacing: -0.02em; /* Reduced from -0.04em */
+/* typography */
+.display-lg {
+  font-family: var(--font-manrope);
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1.1;
 }
 
-/* The Luminary Design System: Adaptive Glassmorphism */
+.headline-md {
+  font-family: var(--font-manrope);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Luminary UI Primitives */
 @utility luminary-glass {
   background: var(--glass-bg);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 @utility luminary-border {
@@ -119,16 +118,21 @@ body::after {
 
 @utility luminary-card {
   @apply luminary-glass luminary-border rounded-[2.5rem];
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Adaptive Glow Effects */
+.luminary-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
 .glow-primary {
-  box-shadow: 0 0 40px rgba(186, 158, 255, var(--glow-opacity));
+  box-shadow: 0 0 64px rgba(186, 158, 255, var(--glow-opacity));
 }
 
 .glow-secondary {
-  box-shadow: 0 0 40px rgba(52, 181, 250, var(--glow-opacity));
+  box-shadow: 0 0 64px rgba(52, 181, 250, var(--glow-opacity));
 }
 
 /* Custom Scrollbar */
@@ -140,14 +144,5 @@ body::after {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--primary-container);
-  opacity: 0.1;
   border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
-}
-
-/* Animations Helper */
-.perspective-1000 {
-  perspective: 1000px;
 }

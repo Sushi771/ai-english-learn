@@ -20,7 +20,7 @@ export default function DashboardPage() {
 
   return (
     <ProtocolGuard>
-      <div className="min-h-screen bg-slate-950">
+      <div className="min-h-screen bg-[var(--background)] transition-colors duration-500">
         <AIDashboard 
           onStartSession={handleStartSession}
           onOpenWordBank={() => setShowWordBank(true)}

@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   Star,
   X,
+  ArrowUpRight,
 } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
@@ -22,6 +23,8 @@ import { useTTS } from '@/hooks/useTTS';
 import Notification from '@/components/Notification';
 import ThemeToggle from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
+import { useAudioWaveform } from '@/hooks/useAudioWaveform';
+import WaveformVisualizer from '@/components/WaveformVisualizer';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -140,8 +143,11 @@ function SessionContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userInput, setUserInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [sessionId, setSessionId] = useState('new');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  const barHeights = useAudioWaveform(isRecording, mediaStream);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [isHUDExpanded, setIsHUDExpanded] = useState(false);
@@ -316,6 +322,7 @@ function SessionContent() {
 
       mediaRecorder.start();
       setIsRecording(true);
+      setMediaStream(stream);
     } catch (err) {
       console.error("Error accessing microphone:", err);
     }
@@ -325,7 +332,11 @@ function SessionContent() {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+      }
+      setMediaStream(null);
     }
   };
 
@@ -336,24 +347,18 @@ function SessionContent() {
 
     try {
       const result = await processAudio(audioBlob, sessionId, customData?.title || rawScenario);
-      setSessionId(result.session_id);
+      // setSessionId(result.session_id); // Instruction: Don't use session_id in return
+      
       setMessages(prev => prev.map(m => 
         m.id === tempUserMsgId 
-          ? { ...m, content: result.transcript, score: result.pronunciation?.accuracy_score } 
+          ? { ...m, content: result.transcript, score: undefined } 
           : m
       ));
-      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', content: result.response }]);
-      speak(result.response);
+      
+      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', content: result.reply }]);
+      speak(result.reply);
 
-      if (result.pronunciation?.words) {
-        const lowScoreWords = result.pronunciation.words
-          .filter((w: PronunciationWord) => w.accuracy_score < 80)
-          .map((w: PronunciationWord) => w.word);
-        if (lowScoreWords.length > 0) {
-          setToastMessage(`"${lowScoreWords.slice(0, 2).join(", ")}" 已入库复习`);
-          setShowToast(true);
-        }
-      }
+      // Pronunciation assessment removed in Phase 4.1 to simplify the link
     } catch (err) {
       setMessages(prev => prev.map(m => 
         m.id === tempUserMsgId ? { ...m, content: "处理失败，请重试。" } : m
@@ -451,7 +456,7 @@ function SessionContent() {
 
   return (
     <ProtocolGuard>
-      <div className="flex flex-col h-screen bg-background text-on-background font-inter overflow-hidden relative transition-colors duration-500">
+      <div className="flex flex-col h-screen bg-[var(--background)] text-[var(--on-background)] font-inter overflow-hidden relative transition-colors duration-500">
         <Notification isVisible={showToast} message={toastMessage} onClose={() => setShowToast(false)} />
 
         {/* Ambient background */}
@@ -462,17 +467,17 @@ function SessionContent() {
         </div>
 
         {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6 md:px-12 backdrop-blur-xl border-b border-white/5 bg-background/50">
+        <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6 md:px-12 backdrop-blur-3xl border-b luminary-border bg-[var(--background)]/50">
           <div className="max-w-[1920px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-6">
               <button
                 onClick={() => router.back()}
-                className="p-3 rounded-2xl bg-on-background/5 text-on-background/40 hover:text-primary transition-all hover:bg-primary/5"
+                className="p-3 rounded-2xl luminary-glass luminary-border text-[var(--outline)] hover:text-[var(--primary)] transition-all"
               >
                 <ArrowLeft size={20} />
               </button>
               <div className="flex flex-col">
-                <h2 className="text-xl md:text-2xl font-bold font-manrope uppercase tracking-tight text-on-background">
+                <h2 className="display-lg text-xl md:text-2xl font-bold uppercase tracking-tight text-[var(--on-background)]">
                   {rawScenario}
                 </h2>
                 <div className="flex items-center gap-3">
@@ -496,9 +501,9 @@ function SessionContent() {
               <ThemeToggle />
               <button
                 onClick={() => setIsHUDExpanded(!isHUDExpanded)}
-                className="p-3 rounded-2xl bg-on-background/5 text-on-background shadow-lg hover:bg-on-background/10 transition-all"
+                className="p-3 rounded-2xl luminary-glass luminary-border text-[var(--on-background)] shadow-2xl hover:scale-110 transition-all"
               >
-                {isHUDExpanded ? <LayoutGrid size={22} className="text-primary" /> : <LayoutGrid size={22} />}
+                {isHUDExpanded ? <LayoutGrid size={22} className="text-[var(--primary)]" /> : <LayoutGrid size={22} />}
               </button>
             </div>
           </div>
@@ -595,7 +600,7 @@ function SessionContent() {
                           animate={{ opacity: 1, scale: 1 }}
                           className="mt-5 flex items-center justify-end gap-3"
                         >
-                          <div className="px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-manrope text-[10px] font-black uppercase tracking-widest shadow-lg">
+                          <div className="px-4 py-2 rounded-full luminary-glass luminary-border text-emerald-400 font-manrope text-[10px] font-black uppercase tracking-widest shadow-2xl">
                             {msg.score}% Pronunciation Sync
                           </div>
                         </motion.div>
@@ -702,11 +707,11 @@ function SessionContent() {
         </div>
 
         {/* Footer input bar */}
-        <footer className="fixed bottom-0 left-0 right-0 z-50 p-6 md:p-10 backdrop-blur-3xl bg-background/50 border-t border-white/5">
+        <footer className="fixed bottom-0 left-0 right-0 z-50 p-6 md:p-10 backdrop-blur-3xl bg-[var(--background)]/50 border-t luminary-border">
           <div className="max-w-[1920px] mx-auto flex items-center justify-center gap-12">
             <div className="flex-1 max-w-3xl relative group">
-              <div className="absolute inset-0 bg-primary/5 rounded-[2.5rem] blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-              <div className="relative bg-on-background/5 border border-on-background/5 rounded-[2.5rem] p-2 pl-8 flex items-center transition-all duration-500 focus-within:border-primary/30 shadow-2xl">
+              <div className="absolute inset-0 bg-[var(--primary)]/5 rounded-[2.5rem] blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+              <div className="relative luminary-glass luminary-border rounded-[2.5rem] p-2 pl-8 flex items-center transition-all duration-500 focus-within:ring-4 focus-within:ring-[var(--primary)]/10 shadow-2xl">
                 <textarea
                   rows={1}
                   value={userInput}
@@ -714,13 +719,13 @@ function SessionContent() {
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
                   placeholder={isProcessing ? "处理中..." : "输入..."}
                   disabled={isProcessing}
-                  className="flex-1 bg-transparent py-4 focus:outline-none resize-none placeholder-on-background/20 text-primary text-xl font-bold uppercase tracking-tight disabled:opacity-20"
+                  className="flex-1 bg-transparent py-4 focus:outline-none resize-none placeholder-[var(--outline)] text-[var(--primary)] text-xl font-bold uppercase tracking-tight disabled:opacity-20"
                 />
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   onClick={handleSend}
                   disabled={!userInput.trim() || isProcessing}
-                  className="p-6 bg-primary text-white dark:text-on-background rounded-full shadow-2xl disabled:opacity-20 transition-all ml-4"
+                  className="p-6 bg-[var(--primary)] text-[var(--on-primary)] rounded-full shadow-2xl disabled:opacity-20 transition-all ml-4"
                 >
                   <Send className="w-8 h-8" strokeWidth={3} />
                 </motion.button>
@@ -736,13 +741,17 @@ function SessionContent() {
                   "w-24 h-24 rounded-full transition-all flex items-center justify-center relative shadow-2xl overflow-hidden border-4",
                   isRecording
                     ? "bg-rose-500 border-rose-400"
-                    : "bg-on-background/5 border-on-background/10 text-primary hover:border-primary/30"
+                    : "luminary-glass luminary-border text-[var(--primary)] hover:scale-105"
                 )}
               >
-                <Mic className={cn("w-10 h-10", isRecording ? "animate-pulse" : "transition-transform")} strokeWidth={3} />
+                {isRecording ? (
+                  <WaveformVisualizer barHeights={barHeights} isActive={isRecording} className="w-16" />
+                ) : (
+                  <Mic className="w-10 h-10 transition-transform" strokeWidth={3} />
+                )}
               </motion.button>
-              <span className="text-[10px] font-black uppercase mt-3 tracking-widest text-on-background/40">
-                {isRecording ? "传输中" : "录音"}
+              <span className="text-[10px] font-black uppercase mt-3 tracking-widest opacity-40">
+                {isRecording ? "正在倾听" : "按下录制"}
               </span>
             </div>
           </div>
@@ -755,7 +764,7 @@ function SessionContent() {
 export default function ChatSession() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center text-primary">
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center text-[var(--primary)]">
         <Loader2 className="w-12 h-12 animate-spin" />
       </div>
     }>

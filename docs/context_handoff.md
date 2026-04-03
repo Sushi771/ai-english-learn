@@ -24,6 +24,7 @@ MCP: filesystem、github、puppeteer、memory、fetch、sequential-thinking、sq
 ✅ 词汇收集（Session.tsx AI气泡逐词点击 + Mini-Drawer）
 ✅ Supabase Auth 完整接入并验证通过
 ✅ 多模型支持（GLM-4 Flash / GLM-4.5 Air 路由切换，已端到端验证）
+✅ **Luminary 3.0 UI Overhaul**（全量 CSS 变量架构 + 毛玻璃系统 100% 覆盖）
 
 ## 已确认的架构决策（重要！）
 - Supabase 新项目（2024年后）JWT 算法为 ES256，不是 HS256
@@ -36,6 +37,8 @@ MCP: filesystem、github、puppeteer、memory、fetch、sequential-thinking、sq
 - Supabase URL: https://osotmqdwnwrgwfececmm.supabase.co
 - /v1/chat 端点已从 FormData 改为 JSON Body（Phase 2 期间统一）
 - 模型选择持久化在 localStorage key: preferred_model
+- **UI 变量系统**: 全量采用 `globals.css` 中的 CSS 变量，严禁在组件中硬编码 HEX。
+- **字体规范**: 标题使用 `var(--font-manrope)`，正文使用 `var(--font-inter)`。
 
 ## Phase 2 多模型支持 — 已完成架构（重要！）
 
@@ -75,5 +78,6 @@ MCP: filesystem、github、puppeteer、memory、fetch、sequential-thinking、sq
 ## Phase 3 下一步（按优先级）
 1. ✅ Supabase Auth（已完成）
 2. ✅ 多模型支持（已完成）
-3. ✅ 流式响应优化（Streaming Response — 实时增量更新，包含打字机光标界面）
-4. 🔲 语音评测细节打磨
+3. ✅ 流式响应优化（已完成）
+4. ✅ **Luminary 3.0 UI Overhaul** (已完成)
+5. 🔲 语音评测细节打磨 (下一阶段重点)

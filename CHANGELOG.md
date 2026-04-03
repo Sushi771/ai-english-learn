@@ -1,6 +1,24 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [2.5.0] - 2026-04-03
+
+### Added
+- **Luminary UI Overhaul (Phase 3 Visuals):**
+    - Transitioned to a unified CSS Variable system (`:root` / `.dark`) for cross-thematic consistency.
+    - Implemented a high-performance **Glassmorphism** layer using Tailwind v4 `@utility`.
+    - Integrated **Manrope** (Headers) and **Inter** (Body) typography for a premium editorial feel.
+    - Added decorative background textures (SVG Noise) and ambient pulse animations.
+- **Modernized Components:**
+    - **AIDashboard:** Refined grid layout with glass sidebars and glowing activity cards.
+    - **Scenario Forge:** Redesigned scene selection with interactive hover scaling and elevation.
+    - **Immersion Session:** HUD-inspired "Mission Compass" and interactive chat bubbles.
+    - **WordBank:** Complete theme sync with the new Luminary tokens.
+
+### Changed
+- **Styling Architecture:** Removed legacy hardcoded HEX values in components in favor of `var(--background)`, `var(--primary)`, etc.
+- **Layout:** Optimized padding and spacing for ultra-wide monitors using `max-w-luminary`.
     
 ## [2.4.0] - 2026-04-03
     

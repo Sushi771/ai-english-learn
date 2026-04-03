@@ -66,25 +66,31 @@ class ModelGateway:
                 return await self.get_chat_response(messages, model="glm-4-flash", level=level, role=role)
             raise e
 
-    async def get_transcription(self, audio_file_path: str, api_key: Optional[str] = None) -> str:
+    async def get_transcription(self, audio_bytes: bytes, content_type: str = "audio/webm") -> str:
         """Centralized STT using Zhipu."""
         import httpx
         try:
-            active_key = api_key or self.default_keys["zhipu"]
-            if not active_key: return "API key missing"
+            active_key = os.getenv("ZHIPUAI_API_KEY")
+            if not active_key: 
+                print("STT Error: ZHIPUAI_API_KEY not found in environment")
+                return None
 
             url = "https://open.bigmodel.cn/api/paas/v4/audio/transcriptions"
             headers = {"Authorization": f"Bearer {active_key}"}
             async with httpx.AsyncClient(timeout=30.0) as client:
-                with open(audio_file_path, "rb") as f:
-                    files = {"file": (os.path.basename(audio_file_path), f, "audio/mpeg")}
-                    data = {"model": "glm-asr-2512"}
-                    response = await client.post(url, headers=headers, files=files, data=data)
-                    if response.status_code == 200:
-                        return response.json().get("text", "")
+                # Prepare the files dictionary for multipart/form-data
+                # Filename is needed by the API even if it's a byte stream
+                files = {"file": ("recording.webm", audio_bytes, content_type)}
+                data = {"model": "glm-asr-2512"}
+                
+                response = await client.post(url, headers=headers, files=files, data=data)
+                if response.status_code == 200:
+                    return response.json().get("text", "")
+                else:
+                    print(f"ASR API Error: {response.status_code} - {response.text}")
             return None
         except Exception as e:
-            print(f"STT Error: {e}")
+            print(f"STT Exception: {e}")
             return None
 
 gateway = ModelGateway()

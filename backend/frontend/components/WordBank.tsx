@@ -125,7 +125,7 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-background/80 backdrop-blur-3xl z-[100]"
+            className="fixed inset-0 bg-[var(--background)]/80 backdrop-blur-3xl z-[100]"
           />
 
           {/* Flashcard Review Overlay */}
@@ -142,23 +142,23 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
                   <div className="max-w-xl mx-auto space-y-4">
                     <div className="flex justify-between items-end">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/20 rounded-lg text-primary">
+                        <div className="p-2 bg-[var(--primary)]/20 rounded-lg text-[var(--primary)]">
                           <Brain size={18} />
                         </div>
                         <div>
-                          <h4 className="text-xl font-black font-manrope tracking-tight text-on-background">词汇抗遗忘训练</h4>
-                          <p className="text-[9px] font-black tracking-widest text-on-background/40 uppercase">Cognitive Protocol Active</p>
+                          <h4 className="text-xl font-black font-manrope tracking-tight text-[var(--on-background)]">词汇抗遗忘训练</h4>
+                          <p className="text-[9px] font-black tracking-widest text-[var(--outline)] uppercase">Cognitive Protocol Active</p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-black text-on-background/60 font-manrope">
+                      <span className="text-[10px] font-black text-[var(--outline)] font-manrope">
                         {showSummary ? '训练完成' : `${currentCardIndex + 1} / ${words.length}`}
                       </span>
                     </div>
-                    <div className="h-1.5 w-full bg-on-background/5 rounded-full overflow-hidden shadow-inner border border-on-background/5">
+                    <div className="h-1.5 w-full bg-[var(--on-background)]/5 rounded-full overflow-hidden shadow-inner border border-[var(--on-background)]/5">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${((currentCardIndex + (showSummary ? 1 : 0)) / words.length) * 100}%` }}
-                        className="h-full bg-primary shadow-[0_0_15px_rgba(186,158,255,0.6)]"
+                        className="h-full bg-[var(--primary)] shadow-[0_0_15px_rgba(186,158,255,0.6)]"
                       />
                     </div>
                   </div>
@@ -173,11 +173,11 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
                     
                     <div className="relative">
-                      <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-primary/20 shadow-xl">
-                        <Trophy size={48} className="text-primary animate-bounce fill-primary/20" />
+                      <div className="w-24 h-24 bg-[var(--primary)]/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-[var(--primary)]/20 shadow-xl">
+                        <Trophy size={48} className="text-[var(--primary)] animate-bounce fill-[var(--primary)]/20" />
                       </div>
-                      <h3 className="text-4xl font-black font-manrope tracking-tighter text-on-background">复习完毕</h3>
-                      <p className="text-sm font-medium text-on-background/40 mt-2 lowercase">Great job! Your memory pathway is strengthened.</p>
+                      <h3 className="text-4xl font-black font-manrope tracking-tighter text-[var(--on-background)]">复习完毕</h3>
+                      <p className="text-sm font-medium text-[var(--outline)] mt-2 lowercase">Great job! Your memory pathway is strengthened.</p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">
@@ -196,14 +196,14 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
                     <div className="space-y-4">
                       <button 
                         onClick={startReview}
-                        className="w-full bg-primary py-5 rounded-2xl text-white dark:text-[#060e20] font-black uppercase tracking-[0.2em] text-xs shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                        className="w-full bg-[var(--primary)] py-5 rounded-2xl text-[var(--on-primary)] font-black uppercase tracking-[0.2em] text-xs shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
                       >
                         <RotateCcw size={18} strokeWidth={3} />
                         再练一遍
                       </button>
                       <button 
                         onClick={() => setIsReviewMode(false)}
-                        className="w-full bg-on-background/5 py-5 rounded-2xl text-on-background/60 font-black uppercase tracking-[0.2em] text-xs hover:bg-on-background/10 transition-all"
+                        className="w-full bg-[var(--on-background)]/5 py-5 rounded-2xl text-[var(--on-background)]/60 font-black uppercase tracking-[0.2em] text-xs hover:bg-[var(--on-background)]/10 transition-all"
                       >
                         退出训练
                       </button>
@@ -225,27 +225,27 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
                     >
                       {/* Front: Word */}
                       <div className="absolute inset-0 luminary-glass luminary-border [backface-visibility:hidden] rounded-[3rem] p-12 flex flex-col items-center justify-center text-center shadow-2xl">
-                         <div className="absolute top-10 left-10 p-3 bg-primary/10 rounded-xl text-primary border border-primary/20">
+                         <div className="absolute top-10 left-10 p-3 bg-[var(--primary)]/10 rounded-xl text-[var(--primary)] border border-[var(--primary)]/20">
                             <Volume2 size={24} onClick={(e) => { e.stopPropagation(); speak(words[currentCardIndex].word); }} />
                          </div>
-                         <h2 className="text-6xl md:text-7xl font-black font-manrope tracking-tighter text-on-background group-hover:text-primary transition-colors mb-4 italic">
+                         <h2 className="text-6xl md:text-7xl font-black font-manrope tracking-tighter text-[var(--on-background)] group-hover:text-[var(--primary)] transition-colors mb-4 italic">
                             {words[currentCardIndex].word}
                          </h2>
                          <p className="text-sm font-black text-on-background/20 uppercase tracking-[0.4em] mt-8">点击翻转查看释义</p>
                       </div>
 
                       {/* Back: Translation & Example */}
-                      <div className="absolute inset-0 luminary-glass luminary-border [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-[3rem] p-12 flex flex-col items-center justify-center text-center shadow-2xl bg-primary/5">
+                      <div className="absolute inset-0 luminary-glass luminary-border [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-[3rem] p-12 flex flex-col items-center justify-center text-center shadow-2xl bg-[var(--primary)]/5">
                         <div className="space-y-8">
                           <div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-4 block">核心释义</span>
-                            <h3 className="text-4xl font-black text-on-background font-manrope tracking-tight leading-snug">
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--primary)] mb-4 block">核心释义</span>
+                            <h3 className="text-4xl font-black text-[var(--on-background)] font-manrope tracking-tight leading-snug">
                               {words[currentCardIndex].translation}
                             </h3>
                           </div>
-                          <div className="pt-8 border-t border-primary/10">
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-on-background/30 mb-4 block">语境案例</span>
-                            <p className="text-lg font-medium text-on-background/70 leading-relaxed italic italic font-serif">
+                          <div className="pt-8 border-t border-[var(--primary)]/10">
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--on-background)]/30 mb-4 block">语境案例</span>
+                            <p className="text-lg font-medium text-[var(--on-background)]/70 leading-relaxed italic italic font-serif">
                               "{words[currentCardIndex].example}"
                             </p>
                           </div>
@@ -276,7 +276,7 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
                           </button>
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleReviewAction('mastered'); }}
-                            className="flex-1 bg-primary border-2 border-primary text-white dark:text-[#060e20] py-6 rounded-3xl font-black uppercase tracking-[0.1em] text-xs hover:scale-105 transition-all shadow-[0_20px_40px_rgba(186,158,255,0.3)] active:scale-95"
+                            className="flex-1 bg-[var(--primary)] border-2 border-[var(--primary)] text-[var(--on-primary)] py-6 rounded-3xl font-black uppercase tracking-[0.1em] text-xs hover:scale-105 transition-all shadow-[0_20px_40px_rgba(186,158,255,0.3)] active:scale-95"
                           >
                             已掌握
                           </button>
@@ -296,26 +296,26 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.8 }}
-              className="fixed right-0 top-0 h-full w-full max-w-lg bg-background border-l border-on-background/5 shadow-[-50px_0_100px_rgba(0,0,0,0.5)] z-[101] flex flex-col overflow-hidden transition-colors duration-500"
+              className="fixed right-0 top-0 h-full w-full max-w-lg bg-[var(--background)] border-l luminary-border shadow-[-50px_0_100px_rgba(0,0,0,0.5)] z-[101] flex flex-col overflow-hidden transition-colors duration-500"
             >
               {/* Background Decor */}
               <div className="absolute inset-0 pointer-events-none opacity-20">
-                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/10 blur-[100px] rounded-full" />
-                <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-secondary/8 blur-[80px] rounded-full" />
+                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[var(--primary)]/10 blur-[100px] rounded-full" />
+                <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[var(--secondary)]/8 blur-[80px] rounded-full" />
               </div>
 
               {/* Header */}
-              <div className="p-10 border-b border-on-background/5 space-y-8 relative z-10">
+              <div className="p-10 border-b luminary-border space-y-8 relative z-10">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="p-4 bg-primary/10 rounded-2xl text-primary border border-primary/20 shadow-inner">
+                    <div className="p-4 bg-[var(--primary)]/10 rounded-2xl text-[var(--primary)] border border-[var(--primary)]/20 shadow-inner">
                       <BookOpen size={28} strokeWidth={2.5} />
                     </div>
                     <div>
-                      <h2 className="text-3xl font-black font-manrope tracking-tighter text-on-background">
+                      <h2 className="text-3xl font-black font-manrope tracking-tighter text-[var(--on-background)]">
                         灵动词库
                       </h2>
-                      <p className="text-[10px] font-black text-on-background/40 uppercase tracking-[0.3em]">词块档案馆</p>
+                      <p className="text-[10px] font-black text-[var(--outline)] uppercase tracking-[0.3em]">词块档案馆</p>
                     </div>
                   </div>
                   <button 
@@ -327,13 +327,13 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
                 </div>
 
                 <div className="relative group">
-                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-on-background/30 group-focus-within:text-primary transition-all" size={20} />
+                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[var(--outline)] group-focus-within:text-[var(--primary)] transition-all" size={20} />
                   <input 
                     type="text"
                     placeholder="搜索词库存档..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-on-background/5 border border-on-background/5 rounded-[2rem] py-5 pl-16 pr-6 focus:outline-none focus:border-primary/40 transition-all text-primary placeholder-on-background/20 font-manrope font-black text-sm tracking-widest uppercase shadow-inner"
+                    className="w-full bg-[var(--on-background)]/5 border border-[var(--on-background)]/5 rounded-[2rem] py-5 pl-16 pr-6 focus:outline-none focus:ring-4 focus:ring-[var(--primary)]/10 transition-all text-[var(--primary)] placeholder-[var(--outline)] font-manrope font-black text-sm tracking-widest uppercase shadow-inner"
                   />
                 </div>
               </div>
@@ -343,10 +343,10 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
                 {loading ? (
                   <div className="h-full flex flex-col items-center justify-center gap-6">
                     <div className="relative">
-                      <div className="w-16 h-16 border-4 border-on-background/5 rounded-full" />
-                      <div className="absolute inset-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(186,158,255,0.4)]" />
+                      <div className="w-16 h-16 border-4 border-[var(--on-background)]/5 rounded-full" />
+                      <div className="absolute inset-0 w-16 h-16 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(186,158,255,0.4)]" />
                     </div>
-                    <p className="text-[10px] font-black text-on-background/40 uppercase tracking-[0.3em] animate-pulse">正在同步云端数据库...</p>
+                    <p className="text-[10px] font-black text-[var(--outline)] uppercase tracking-[0.3em] animate-pulse">正在同步云端数据库...</p>
                   </div>
                 ) : filteredWords.length > 0 ? (
                   filteredWords.map((word, i) => (
@@ -363,12 +363,12 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
 
                       <div className="flex items-start justify-between mb-6 relative z-10">
                         <div>
-                          <h3 className="text-3xl font-black text-on-background font-manrope tracking-tighter group-hover:text-primary transition-colors">{word.word}</h3>
+                          <h3 className="text-3xl font-black text-[var(--on-background)] font-manrope tracking-tighter group-hover:text-[var(--primary)] transition-colors">{word.word}</h3>
                           <div className="flex items-center gap-3 mt-2">
-                            <span className="text-xs text-on-background/40 font-black tracking-widest uppercase">{word.status === 'mastered' ? 'ALREADY MASTERED' : word.status === 'reviewing' ? 'IN REVIEW' : 'NEW ACQUISITION'}</span>
+                            <span className="text-xs text-[var(--outline)] font-black tracking-widest uppercase">{word.status === 'mastered' ? 'ALREADY MASTERED' : word.status === 'reviewing' ? 'IN REVIEW' : 'NEW ACQUISITION'}</span>
                             <button 
                               onClick={(e) => { e.stopPropagation(); speak(word.word); }}
-                              className="p-2 bg-on-background/5 rounded-lg text-primary hover:bg-primary hover:text-white dark:hover:text-[#060e20] transition-all shadow-xl"
+                              className="p-2 bg-[var(--on-background)]/5 rounded-lg text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--on-primary)] transition-all shadow-xl"
                             >
                               <Volume2 size={16} strokeWidth={3} />
                             </button>
@@ -379,15 +379,15 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
                              "px-4 py-1.5 rounded-full border text-[10px] font-black tracking-widest uppercase",
                              word.status === 'mastered' ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/30" : 
                              word.status === 'reviewing' ? "text-amber-400 bg-amber-400/10 border-amber-400/30" : 
-                             "text-primary bg-primary/10 border-primary/30"
+                             "text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]/30"
                            )}>
                              {word.status}
                            </div>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.15em] text-on-background/40 relative z-10">
-                        <CheckCircle2 size={14} className={word.status === 'mastered' ? "text-emerald-400" : "text-on-background/20"} />
+                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.15em] text-[var(--outline)] relative z-10">
+                        <CheckCircle2 size={14} className={word.status === 'mastered' ? "text-emerald-400" : "opacity-20"} />
                         <span>{word.translation.substring(0, 30)}{word.translation.length > 30 ? '...' : ''}</span>
                       </div>
                     </motion.div>
@@ -408,9 +408,9 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
               </div>
 
               {/* Footer */}
-              <div className="p-10 border-t border-on-background/5 bg-on-background/5 relative z-10">
+              <div className="p-10 border-t luminary-border bg-[var(--on-background)]/5 relative z-10">
                 <button 
-                  className="w-full bg-primary py-6 rounded-3xl text-white dark:text-[#060e20] font-black uppercase tracking-[0.2em] text-sm shadow-[0_20px_50px_rgba(186,158,255,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale"
+                  className="w-full bg-[var(--primary)] py-6 rounded-3xl text-[var(--on-primary)] font-black uppercase tracking-[0.2em] text-sm shadow-[0_20px_50px_rgba(186,158,255,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale"
                   onClick={startReview}
                   disabled={words.length === 0}
                 >

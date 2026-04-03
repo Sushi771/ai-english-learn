@@ -13,20 +13,24 @@ import {
   RefreshCw,
   ChevronRight,
   ShieldCheck,
-  Compass
+  Compass,
+  ArrowUpRight,
+  TrendingUp,
+  BrainCircuit
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { getDashboardStats, getRecentSessions, forgeScenario } from "@/lib/api";
 import Challenge from "./Challenge";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 const formatDate = (dateStr: string) => {
-  if (!dateStr) return "未知时间";
+  if (!dateStr) return "Just Now";
   try {
     const d = new Date(dateStr);
     const diff = Date.now() - d.getTime();
-    if (diff < 3600000) return "Just Now";
+    if (diff < 3600000) return "Moments ago";
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
     return d.toLocaleDateString();
   } catch {
@@ -48,7 +52,6 @@ const AIDashboard = ({ onStartSession, onOpenWordBank }: AIDashboardProps) => {
   const [isForging, setIsForging] = useState(false);
 
   useEffect(() => {
-    // Check for level - if not set, redirect to placement
     const level = localStorage.getItem("user_level");
     if (!level) {
       router.push("/placement");
@@ -77,7 +80,6 @@ const AIDashboard = ({ onStartSession, onOpenWordBank }: AIDashboardProps) => {
     setIsForging(true);
     try {
         const scenario = await forgeScenario(searchQuery);
-        // UX Persistence: Store the forged data for the session to pick up
         if (typeof window !== "undefined") {
             sessionStorage.setItem("custom_scenario", JSON.stringify(scenario));
         }
@@ -90,195 +92,233 @@ const AIDashboard = ({ onStartSession, onOpenWordBank }: AIDashboardProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans overflow-x-hidden selection:bg-indigo-500/30">
-      {/* Background Gradients */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-600/10 blur-[120px] rounded-full" />
-        <div className="absolute top-1/2 -left-24 w-80 h-80 bg-blue-600/5 blur-[100px] rounded-full" />
+    <div className="min-h-screen bg-[var(--background)] text-[var(--on-background)] font-sans selection:bg-[var(--primary)]/20 overflow-x-hidden">
+      {/* Ambient Lighting */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-[var(--primary)]/10 blur-[140px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-[var(--secondary)]/10 blur-[120px] rounded-full" />
       </div>
 
-      <nav className="relative z-10 flex justify-between items-center px-8 py-8 border-b border-slate-900 border-dashed">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <Mic className="text-white w-5 h-5" />
+      {/* Navigation - The Digital Luminary Style */}
+      <nav className="relative z-50 flex justify-between items-center px-6 md:px-12 py-8 bg-transparent">
+        <div className="flex items-center gap-4 group">
+          <div className="w-12 h-12 luminary-glass luminary-border rounded-2xl flex items-center justify-center shadow-2xl glow-primary transition-transform group-hover:scale-110">
+            <BrainCircuit className="text-[var(--primary)] w-6 h-6" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-white">智学英语 AI</span>
+          <div className="flex flex-col">
+            <span className="display-lg text-2xl md:text-3xl bg-clip-text text-transparent bg-gradient-to-r from-[var(--on-background)] to-[var(--on-background)]/60">
+              Antigravity AI
+            </span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--primary)]">Neural Immersion Engine</span>
+          </div>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm font-bold uppercase tracking-widest">{stats?.level || "..."} Proficiency</span>
+
+        <div className="flex items-center gap-4 md:gap-8">
+          <div className="hidden md:flex items-center gap-3 px-5 py-2.5 luminary-glass luminary-border rounded-full">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs font-black uppercase tracking-widest opacity-80">
+                {stats?.level || "..."} PROFICIENCY
+            </span>
           </div>
-          <Link href="/settings" className="p-2 text-slate-400 hover:text-white transition-colors">
-            <Settings className="w-6 h-6" />
+          <Link href="/settings" className="p-3 luminary-glass luminary-border rounded-xl text-[var(--on-background)] hover:text-[var(--primary)] transition-all hover:scale-110">
+            <Settings className="w-5 h-5" />
           </Link>
         </div>
       </nav>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-8 py-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Main Console */}
-        <div className="lg:col-span-8 space-y-12">
-          {/* Level 0 Foundation Banner */}
-          {stats?.level === "Level 0" && (
-            <motion.div 
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               className="p-8 rounded-[2.5rem] bg-gradient-to-br from-indigo-600 to-blue-700 border border-indigo-400/30 shadow-2xl shadow-indigo-500/20 relative overflow-hidden group"
-            >
-                <div className="relative z-10 space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[10px] font-black uppercase tracking-widest text-white">
-                        Absolute Beginner Path
-                    </div>
-                    <h2 className="text-3xl font-black text-white leading-tight">Start Your Foundations</h2>
-                    <p className="text-indigo-100 max-w-md">You're at the beginning of your journey. Let's master the alphabet and phonetics before diving into conversations.</p>
-                    <Link href="/foundation" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-indigo-600 font-black rounded-2xl hover:bg-indigo-50 transition-all active:scale-95 shadow-xl">
-                        Launch Phase 1 <ChevronRight size={18} />
-                    </Link>
-                </div>
-                <BookMarked className="absolute right-[-5%] bottom-[-10%] w-64 h-64 text-white/5 -rotate-12 group-hover:rotate-0 transition-transform duration-700" />
-            </motion.div>
-          )}
-
-          {/* Neural Forge - Search Focused */}
+      <main className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 py-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        {/* Main Interface Console */}
+        <div className="lg:col-span-8 space-y-16">
+          
+          {/* Hero Welcome */}
           <section className="space-y-6">
-            <div className="space-y-2">
-                <h1 className="text-4xl font-black tracking-tight flex items-center gap-3 text-white">
-                   Neural Forge <Sparkles className="w-6 h-6 text-indigo-400" />
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="space-y-2"
+            >
+                <div className="inline-flex items-center gap-2 text-[var(--primary)] mb-2">
+                    <Sparkles size={16} />
+                    <span className="text-xs font-black uppercase tracking-[0.25em]">Ready for immersion</span>
+                </div>
+                <h1 className="display-lg text-5xl md:text-7xl">
+                    What should we <br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)]">forge</span> today?
                 </h1>
-                <p className="text-slate-400">Input any scenario. AI builds the linguistic blueprint for you.</p>
-            </div>
-            
-            <form onSubmit={handleForge} className="relative group">
-                <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
-                    <Search className={`w-5 h-5 transition-colors ${isForging ? "text-indigo-400 animate-pulse" : "text-slate-500 group-focus-within:text-indigo-400"}`} />
+            </motion.div>
+
+            {/* Neural Forge - Floating Pill */}
+            <form onSubmit={handleForge} className="relative group max-w-2xl">
+                <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
+                    <Search className={cn(
+                        "w-6 h-6 transition-all",
+                        isForging ? "text-[var(--primary)] animate-spin" : "text-[var(--outline)] group-focus-within:text-[var(--primary)]"
+                    )} />
                 </div>
                 <input 
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={isForging ? "Fabricating scenario..." : "e.g. Discussing the future of EV at Tesla, Job interview for Senior Dev..."}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-3xl pl-16 pr-32 py-6 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-slate-700"
+                    placeholder={isForging ? "Fabricating linguistic context..." : "Describe any scenario (e.g. A job interview at SpaceX)"}
+                    className="w-full luminary-glass luminary-border rounded-[2.5rem] pl-20 pr-40 py-8 text-lg focus:outline-none focus:ring-4 focus:ring-[var(--primary)]/10 transition-all placeholder:text-[var(--outline)] shadow-2xl"
                 />
-                <div className="absolute inset-y-2 right-2">
+                <div className="absolute inset-y-3 right-3 flex items-center">
                     <button 
                         type="submit"
                         disabled={isForging}
-                        className="h-full px-8 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white font-bold rounded-2xl transition-all flex items-center gap-2 group-active:scale-95"
+                        className="h-full px-10 bg-[var(--primary)] text-[var(--on-primary)] font-black uppercase tracking-widest text-xs rounded-[2rem] hover:opacity-90 transition-all flex items-center gap-3 active:scale-95 shadow-xl shadow-[var(--primary)]/20"
                     >
-                        {isForging ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Forge"}
+                        {isForging ? <RefreshCw className="w-4 h-4 animate-spin" /> : <>Forge <ArrowUpRight size={18}/></>}
                     </button>
                 </div>
             </form>
           </section>
 
-          {/* Core Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <button 
+          {/* Quick Access Blocks */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <motion.button 
+              whileHover={{ y: -8 }}
               onClick={() => onStartSession()}
-              className="p-8 rounded-3xl bg-indigo-600/10 border border-indigo-500/20 hover:bg-indigo-600/20 transition-all text-left flex flex-col gap-6 group"
+              className="p-10 luminary-card text-left flex flex-col gap-10 group relative overflow-hidden"
             >
-              <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white">
-                <Zap className="w-6 h-6" />
+              <div className="w-16 h-16 bg-[var(--primary)] rounded-[1.5rem] flex items-center justify-center text-[var(--on-primary)] shadow-2xl shadow-[var(--primary)]/30 group-hover:rotate-6 transition-transform">
+                <Mic className="w-8 h-8" />
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-1">Adaptive Immersion</h3>
-                <p className="text-sm text-slate-400">Randomized scenarios at {stats?.level}+1 level.</p>
+                <h3 className="headline-md mb-2">Voice Sanctuary</h3>
+                <p className="text-sm opacity-60 leading-relaxed max-w-[200px]">Enter an immersive environment for fluid real-time dialogue.</p>
               </div>
-            </button>
+              <div className="absolute top-8 right-8 p-3 rounded-full bg-[var(--on-background)]/5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <ArrowUpRight size={20} />
+              </div>
+            </motion.button>
 
-            <button 
-              onClick={() => setShowChallenge(true)}
-              className="p-8 rounded-3xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all text-left flex flex-col gap-6"
+            <motion.button 
+              whileHover={{ y: -8 }}
+              onClick={onOpenWordBank}
+              className="p-10 luminary-card text-left flex flex-col gap-10 group relative overflow-hidden border-dashed"
             >
-              <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-indigo-400">
-                <Compass className="w-6 h-6" />
+              <div className="w-16 h-16 bg-[var(--surface-container-high)] rounded-[1.5rem] flex items-center justify-center text-[var(--primary)] shadow-xl group-hover:-rotate-6 transition-transform">
+                <BookMarked className="w-8 h-8" />
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-1">Vocabulary Audit</h3>
-                <p className="text-sm text-slate-400">Review linguistic weak points identified by AI.</p>
+                <h3 className="headline-md mb-2">Lexical Vault</h3>
+                <p className="text-sm opacity-60 leading-relaxed max-w-[200px]">Review and audit the linguistic DNA you've acquired.</p>
               </div>
-            </button>
+              <div className="absolute top-8 right-8 p-3 rounded-full bg-[var(--on-background)]/5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <ArrowUpRight size={20} />
+              </div>
+            </motion.button>
           </div>
 
-          {/* History */}
-          <section className="space-y-6">
-            <h3 className="text-xl font-bold flex items-center gap-2 text-slate-500">
-              <History className="w-4 h-4" /> RECENT TRAJECTORY
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              {recentSessions.length > 0 ? recentSessions.slice(0, 5).map((session, i) => (
+          {/* Neural Traces (History) */}
+          <section className="space-y-8">
+            <div className="flex items-center justify-between border-b luminary-border border-x-0 border-t-0 pb-6">
+                <h3 className="text-xs font-black uppercase tracking-[0.3em] opacity-40 flex items-center gap-3">
+                    <History className="w-4 h-4" /> Neural Traces
+                </h3>
+                <Link href="/history" className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)] hover:opacity-70">
+                    View Full Archive
+                </Link>
+            </div>
+
+            <div className="space-y-4">
+              {recentSessions.length > 0 ? recentSessions.slice(0, 3).map((session, i) => (
                 <div 
                   key={session.id || i}
                   onClick={() => onStartSession(session.topic)}
-                  className="p-5 rounded-2xl bg-slate-900/50 border border-slate-900 hover:bg-slate-900 transition-colors cursor-pointer flex items-center justify-between group"
+                  className="p-6 luminary-card flex items-center justify-between group cursor-pointer hover:bg-[var(--surface-bright)]/50"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-indigo-400 transition-colors">
-                      <LayoutDashboard className="w-5 h-5" />
+                  <div className="flex items-center gap-6">
+                    <div className="w-12 h-12 rounded-2xl bg-[var(--surface-container-high)] flex items-center justify-center text-[var(--outline)] group-hover:text-[var(--secondary)] transition-colors">
+                      <LayoutDashboard size={20} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-200">{session.topic}</h4>
-                      <p className="text-xs text-slate-500 uppercase tracking-widest">{formatDate(session.started_at)}</p>
+                      <h4 className="font-bold text-lg mb-0.5">{session.topic}</h4>
+                      <div className="flex items-center gap-2 opacity-40 text-[10px] font-black uppercase tracking-widest">
+                          <span>{formatDate(session.started_at)}</span>
+                          <span className="w-1 h-1 rounded-full bg-[var(--outline)]" />
+                          <span>Stable Fluency</span>
+                      </div>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-700 group-hover:text-slate-400" />
+                  <div className="p-2 rounded-full border luminary-border opacity-0 group-hover:opacity-100 transition-all">
+                    <ChevronRight size={16} />
+                  </div>
                 </div>
               )) : (
-                <div className="py-12 text-center border border-dashed border-slate-800 rounded-3xl text-slate-600">
-                  No previous neural traces detected.
+                <div className="py-20 text-center border luminary-border border-dashed rounded-[2.5rem] opacity-30">
+                  <p className="text-sm font-black uppercase tracking-widest">No traces detected in current timeline</p>
                 </div>
               )}
             </div>
           </section>
         </div>
 
-        {/* Sidebar Intelligence */}
+        {/* Intelligence Sidebar */}
         <aside className="lg:col-span-4 space-y-8">
-            <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-8">
+            <motion.div 
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               className="p-10 luminary-card space-y-10 glow-primary bg-gradient-to-br from-[var(--surface-container)] to-[var(--background)]"
+            >
                 <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-slate-400 tracking-widest uppercase text-xs">Linguistic DNA</h3>
-                    <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
-                        <BookMarked className="w-4 h-4" />
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-50">Pulse Monitor</h3>
+                    <TrendingUp className="text-[var(--primary)] w-4 h-4" />
+                </div>
+
+                <div className="relative flex justify-center">
+                    {/* Simplified Progress SVG */}
+                    <svg className="w-48 h-48 -rotate-90">
+                        <circle cx="96" cy="96" r="88" stroke="var(--outline-variant)" strokeWidth="4" fill="transparent" opacity="0.1" />
+                        <motion.circle 
+                            cx="96" cy="96" r="88" stroke="var(--primary)" strokeWidth="8" fill="transparent" strokeDasharray="553"
+                            initial={{ strokeDashoffset: 553 }}
+                            animate={{ strokeDashoffset: 553 - (553 * Math.min(100, ((stats?.vocabularyCount || 0) / 1000) * 100)) / 100 }}
+                            strokeLinecap="round"
+                            transition={{ duration: 2, ease: "easeOut" }}
+                        />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span className="text-4xl font-black">{stats?.vocabularyCount || 0}</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Words Resolved</span>
                     </div>
                 </div>
 
-                <div className="space-y-6">
-                    <div className="flex justify-between items-end">
-                        <div>
-                            <div className="text-xs text-slate-500 mb-1">ACQUIRED LEXICON</div>
-                            <div className="text-3xl font-black">{stats?.vocabularyCount || 0}</div>
-                        </div>
-                        <div className="text-right">
-                            <div className="text-xs text-slate-500 mb-1">DUE AUDIT</div>
-                            <div className="text-lg font-bold text-indigo-400">{stats?.dueCount || 0}</div>
-                        </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-3xl bg-[var(--on-background)]/5 border luminary-border">
+                        <div className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Due Audit</div>
+                        <div className="text-xl font-bold text-[var(--secondary)]">{stats?.dueCount || 0}</div>
                     </div>
-                    
-                    <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
-                        <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min(100, ((stats?.vocabularyCount || 0) / 1000) * 100)}%` }}
-                            className="h-full bg-indigo-500"
-                        />
+                    <div className="p-4 rounded-3xl bg-[var(--on-background)]/5 border luminary-border">
+                        <div className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Streak</div>
+                        <div className="text-xl font-bold text-[var(--primary)]">12d</div>
                     </div>
                 </div>
 
                 <button 
                   onClick={onOpenWordBank}
-                  className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-lg shadow-indigo-500/10 active:scale-95"
+                  className="w-full py-5 rounded-[1.5rem] bg-[var(--on-background)] text-[var(--background)] font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all"
                 >
-                  Inspect Word Bank
+                  Enter Word Vault
                 </button>
-            </div>
+            </motion.div>
 
-            <div className="p-8 rounded-3xl border border-slate-800 bg-slate-900/30">
-                <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <RefreshCw className="w-3 h-3" /> Adaptive Note
-                </h4>
-                <p className="text-slate-400 italic leading-relaxed text-sm">
-                    "Your fluency in workplace scenarios at <span className="text-slate-100 font-bold">{stats?.level || 'A1'}</span> level is stabilizing. We've queued several difficulty idioms for your next Forge session."
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="p-8 luminary-card border-none bg-[var(--primary)]/5"
+            >
+                <div className="flex items-center gap-3 mb-4">
+                    <Compass className="w-4 h-4 text-[var(--primary)]" />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest">Ethereal Note</h4>
+                </div>
+                <p className="text-sm italic opacity-70 leading-relaxed font-medium">
+                    "Your synthesis of <span className="text-[var(--on-background)]">technical dialect</span> is evolving. I've prepared a Silicon Valley board meeting scenario for your next immersion."
                 </p>
-            </div>
+            </motion.div>
         </aside>
       </main>
       

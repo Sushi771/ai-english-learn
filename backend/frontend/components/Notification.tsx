@@ -27,18 +27,18 @@ export default function Notification({ message, isVisible, onClose }: ToastProps
           exit={{ opacity: 0, y: 20, scale: 0.9 }}
           className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[200] min-w-[300px]"
         >
-          <div className="luminary-glass luminary-border rounded-2xl p-4 shadow-2xl flex items-center gap-4 bg-[#141f38]/60 border-[#ba9eff1a] min-w-[320px] relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[#ba9eff10] blur-2xl rounded-full" />
-            <div className="w-12 h-12 bg-[#ba9eff1a] rounded-xl flex items-center justify-center text-[#ba9eff] border border-[#ba9eff33] shadow-inner group-hover:scale-110 transition-transform">
+          <div className="luminary-glass luminary-border rounded-2xl p-4 shadow-2xl flex items-center gap-4 bg-[var(--background)]/60 min-w-[320px] relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--primary)]/10 blur-2xl rounded-full" />
+            <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-xl flex items-center justify-center text-[var(--primary)] border border-[var(--primary)]/20 shadow-inner group-hover:scale-110 transition-transform">
               <Sparkles size={24} />
             </div>
             <div className="flex-1">
-              <p className="text-[10px] font-black text-[#ba9eff] uppercase tracking-[0.2em] mb-0.5">Core Capture</p>
-              <h4 className="text-sm font-bold text-white tracking-tight">{message}</h4>
+              <p className="text-[10px] font-black text-[var(--primary)] uppercase tracking-[0.2em] mb-0.5">Core Capture</p>
+              <h4 className="text-sm font-bold text-[var(--on-background)] tracking-tight">{message}</h4>
             </div>
             <button 
               onClick={onClose}
-              className="p-2 hover:bg-white/05 rounded-lg text-[#a3aac4] transition-colors"
+              className="p-2 hover:bg-[var(--on-background)]/5 rounded-lg text-[var(--outline)] transition-colors"
             >
               <X size={18} />
             </button>

@@ -1,80 +1,86 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 
+/**
+ * Hook to perform high-quality neural TTS using edge-tts via backend.
+ */
 export const useTTS = () => {
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const objectUrlRef = useRef<string | null>(null);
 
-    /**
-     * Speaks the given text using the browser's SpeechSynthesis API.
-     * @param text The text to speak.
-     * @param lang Optional language code (default is "en-US", but will auto-detect Chinese characters).
-     */
-    const speak = useCallback((text: string, lang?: string) => {
-        if (typeof window === "undefined" || !window.speechSynthesis) {
-            console.error("Speech synthesis not supported in this browser.");
-            return;
-        }
-
-        if (!text || text.trim().length === 0) {
-            return;
-        }
-
-        // Auto-detect language if not provided
-        let detectedLang = lang || "en-US";
-        if (typeof text === 'string' && !lang && /[\u4e00-\u9fa5]/.test(text)) {
-            detectedLang = "zh-CN";
-        }
-
-        // Defensively cancel speech (some browsers like it others skip it)
-        try {
-            window.speechSynthesis.cancel();
-        } catch (e) {
-            console.error("Failed to cancel speech synthesis:", e);
-        }
-
-        // Wait for voices to be loaded if they aren't ready yet (browser quirks)
-        const startSpeaking = () => {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = detectedLang;
-            utterance.rate = 1.0; // Slightly faster default
-            utterance.pitch = 1.0;
-
-            utterance.onstart = () => setIsSpeaking(true);
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = (err: SpeechSynthesisErrorEvent) => {
-                // If the error is 'interrupted', don't log it as an error as it's common (user clicked again)
-                if (err.error !== 'interrupted') {
-                    console.error("Speech synthesis error event:", err.error, err);
-                }
-                setIsSpeaking(false);
-            };
-
-            try {
-                window.speechSynthesis.speak(utterance);
-            } catch (e) {
-                console.error("Failed to execute speak():", e);
-                setIsSpeaking(false);
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+            if (objectUrlRef.current) {
+                URL.revokeObjectURL(objectUrlRef.current);
             }
         };
-
-        // If voices aren't loaded, Chrome might fail silently or error
-        if (window.speechSynthesis.getVoices().length === 0) {
-            window.speechSynthesis.onvoiceschanged = () => {
-                startSpeaking();
-                window.speechSynthesis.onvoiceschanged = null; // Clean up
-            };
-        } else {
-            startSpeaking();
-        }
     }, []);
 
     const stop = useCallback(() => {
-        if (typeof window !== "undefined" && window.speechSynthesis) {
-            window.speechSynthesis.cancel();
+        if (audioRef.current) {
+            audioRef.current.pause();
             setIsSpeaking(false);
         }
+        if (objectUrlRef.current) {
+            URL.revokeObjectURL(objectUrlRef.current);
+            objectUrlRef.current = null;
+        }
     }, []);
+
+    const speak = useCallback(async (text: string, lang?: string) => {
+        if (!text || text.trim().length === 0) return;
+
+        // Interrupt existing speech
+        stop();
+
+        try {
+            const response = await fetch("http://localhost:8080/v1/tts", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ 
+                    text,
+                    voice: lang === "zh-CN" ? "zh-CN-XiaoxiaoNeural" : "en-US-AriaNeural"
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error("TTS fetch failed");
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            objectUrlRef.current = url;
+
+            const audio = new Audio(url);
+            audioRef.current = audio;
+
+            audio.onplay = () => setIsSpeaking(true);
+            audio.onended = () => {
+                setIsSpeaking(false);
+                URL.revokeObjectURL(url);
+                if (objectUrlRef.current === url) objectUrlRef.current = null;
+            };
+            audio.onerror = () => {
+                setIsSpeaking(false);
+                URL.revokeObjectURL(url);
+                if (objectUrlRef.current === url) objectUrlRef.current = null;
+            };
+
+            await audio.play();
+        } catch (e) {
+            console.error("Neural TTS Error:", e);
+            setIsSpeaking(false);
+        }
+    }, [stop]);
 
     return { speak, stop, isSpeaking };
 };

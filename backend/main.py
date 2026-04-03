@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
+import edge_tts
 
 # Configure global logging
 logging.basicConfig(level=logging.INFO)
@@ -55,7 +56,55 @@ async def health_check():
 async def root():
     return {"message": "AI English Learn API is running"}
 
-# POST /v1/process-audio and /v1/process-audio-stream removed (Azure Speech SDK removed)
+@app.post("/v1/process-audio")
+async def process_audio(
+    audio: UploadFile = File(...),
+    session_id: str = Form(...),
+    scenario: str = Form("General Conversation"),
+    model_id: Optional[str] = Form(None),
+    user_id: str = Depends(get_current_user)
+):
+    """Receive audio, transcribe it, and get an AI response."""
+    # 1. Read audio bytes
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Audio file is empty")
+
+    # 2. Transcription (ASR)
+    # Using the fixed gateway.get_transcription
+    transcript = await gateway.get_transcription(audio_bytes, audio.content_type)
+    if not transcript:
+        raise HTTPException(status_code=400, detail="Transcription failed")
+
+    print(f"[DEBUG] ASR Transcript: {transcript}")
+
+    # 3. Process as a chat message
+    # Logic extracted from /v1/chat to ensure consistency
+    active_session_id = session_id
+    if active_session_id == "new":
+        active_session_id = await db_service.create_session(user_id, scenario) or str(uuid.uuid4())
+
+    await db_service.add_chat_log(active_session_id, "user", transcript)
+    review_words = await review_service.get_review_context(user_id)
+    messages = [{"role": "user", "content": transcript}]
+
+    # Non-streaming chat response for audio processing
+    ai_reply = await gateway.get_chat_response(
+        messages,
+        model=model_id or os.getenv("DEFAULT_MODEL", "glm-4-flash"),
+        role="fast_streamer",
+        scenario=scenario,
+        review_words=review_words,
+        stream=False
+    )
+
+    await db_service.add_chat_log(active_session_id, "assistant", ai_reply)
+
+    # 4. Return strictly aligned fields as per supplementary instructions
+    return {
+        "transcript": transcript,
+        "reply": ai_reply
+    }
 
 @app.post("/v1/chat")
 async def chat(
@@ -137,6 +186,28 @@ async def chat(
         "response": ai_response,
         "session_id": active_session_id
     }
+
+@app.post("/v1/tts")
+async def text_to_speech(data: Dict[str, str]):
+    """Generate high-quality neural TTS from text."""
+    text = data.get("text")
+    if not text:
+        raise HTTPException(status_code=422, detail="Text is required")
+        
+    voice = data.get("voice", "en-US-AriaNeural")
+    
+    # Auto-detect Chinese characters and switch to XiaoxiaoNeural
+    import re
+    if re.search(r'[\u4e00-\u9fa5]', text) and voice == "en-US-AriaNeural":
+        voice = "zh-CN-XiaoxiaoNeural"
+        
+    async def generate():
+        communicate = edge_tts.Communicate(text, voice)
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                yield chunk["data"]
+
+    return StreamingResponse(generate(), media_type="audio/mpeg")
 
 @app.get("/v1/dashboard/stats")
 async def get_dashboard_stats(user_id: str = Depends(get_current_user)):

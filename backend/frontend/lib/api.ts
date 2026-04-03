@@ -51,23 +51,19 @@ export interface PronunciationResult {
   words?: PronunciationWord[];
 }
 
-export async function sendAudio(audioBlob: Blob, scenario: string, sessionId: string = "default-session", targetText?: string) {
+/**
+ * Process audio by sending it to /v1/process-audio for STT and LLM response.
+ */
+export async function processAudio(audioBlob: Blob, sessionId: string, scenario: string) {
   const settings = getAppSettings();
   const formData = new FormData();
-  formData.append("audio", audioBlob, "recording.wav");
+  formData.append("audio", audioBlob, "recording.webm");
   formData.append("session_id", sessionId);
   formData.append("scenario", scenario);
   formData.append("level", settings.level);
   
-  const key = settings.provider === "openai" ? settings.openaiKey : 
-              settings.provider === "gemini" ? settings.geminiKey : 
-              settings.zhipuKey;
-  if (key) formData.append("api_key", key);
-  if (settings.provider) formData.append("provider", settings.provider);
-
-  if (targetText) {
-    formData.append("target_text", targetText);
-  }
+  const model_id = localStorage.getItem("preferred_model") || "glm-4-flash";
+  formData.append("model_id", model_id);
 
   const authHeader = await getAuthHeader();
   const response = await fetch(`${API_BASE_URL}/v1/process-audio`, {
@@ -85,14 +81,11 @@ export async function sendAudio(audioBlob: Blob, scenario: string, sessionId: st
     throw new Error(errorMessage);
   }
 
-  return response.json();
-}
-
-/**
- * Wrapper for audio processing that matches the (audioBlob, sessionId, scenario, targetText) parameter order.
- */
-export async function processAudio(audioBlob: Blob, sessionId: string, scenario: string, targetText?: string) {
-  return sendAudio(audioBlob, scenario, sessionId, targetText);
+  const data = await response.json();
+  return {
+    transcript: data.transcript,
+    reply: data.reply
+  };
 }
 
 export async function sendMessage(text: string, scenario: string, sessionId: string = "default-session") {

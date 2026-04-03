@@ -1,4 +1,4 @@
-# AI English Learn - UX 设计文档 (v2.2: MVP 强化版)
+# AI English Learn - UX 设计文档 (v3.0: Luminary Overhaul)
 
 ## 1. 设计系统 (Design System)
 保留现有的 **Luminary 2.0** 双生皮肤系统，确保在该视觉体系下完成交互适配。
@@ -7,13 +7,26 @@
 
 | Token | Solar Luminary (Light) | Digital Luminary (Dark) |
 |-------|------------------------|-------------------------|
-| **Background** | `#f8faff` (Snow White) | `#060e20` (Obsidians) |
-| **On-Background** | `#060e20` (Deep Blue) | `#dee5ff` (Pale Blue) |
-| **Primary** | `#7c5dfa` (Deep Indigo) | `#ba9eff` (Electric Purple) |
-| **Noise Opacity** | `0.04` (Subtle Grain) | `0.06` (Concrete Tech) |
-| **Header Weight** | `700` (Bold) | `700` (Bold) |
-| **Surface Radius** | `3rem` (Standard) | `3rem` (Standard) |
-| **Glass Effect** | 40px Blur / 5% Opacity | 40px Blur / 15% Opacity |
+| **Background** | `#f0f0fd` (Soft Lavender) | `#0c0e17` (Deep Obsidian) |
+| **On-Background** | `#0c0e17` (Deep Blue) | `#f0f0fd` (Pale Lavender) |
+| **Primary** | `#694fa9` (Deep Indigo) | `#ba9eff` (Electric Purple) |
+| **Secondary** | `#34b5fa` (Azure Sky) | `#34b5fa` (Azure Sky) |
+| **Noise Opacity** | `0.03` (Subtle Grain) | `0.15` (Digital Grain) |
+| **Glass Blur** | 24px (High Translucency) | 24px (High Translucency) |
+| **Surface Radius** | `2.5rem` (Squircle) | `2.5rem` (Squircle) |
+
+### 1.1 核心视觉架构 (Architecture)
+
+- **CSS 变量分发**: 放弃硬编码 HEX，全面采用 `:root` 与 `.dark` 变量映射。
+- **毛玻璃系统 (Glassmorphic Layer)**: 
+  - `@utility luminary-glass`: 极高模糊值 (24px) 配合低透明度背景，营造灵动虚化感。
+  - `@utility luminary-border`: 细微描边 (1px) 强化玻璃边缘质感。
+- **微交互光效**:
+  - `glow-primary`: 柔和的主色漫反射阴影。
+  - `glow-secondary`: 柔和的辅助色漫反射阴影。
+- **排版系统**:
+  - **Manrope**: 用于标题和装饰性文本，增强现代感与设计张力。
+  - **Inter**: 用于正文阅读，保证易读性与清晰度。
 
 ## 2. 核心用户流程 (User Flows)
 
