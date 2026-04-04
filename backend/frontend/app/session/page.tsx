@@ -280,7 +280,7 @@ function SessionContent() {
     if (!selectedWord) return;
     setIsSavingWord(true);
     try {
-      await addToWordBank(selectedWord, wordContextRef.current);
+      await addToWordBank(selectedWord, wordContextRef.current, wordTranslation);
       setSavedWords(prev => new Set(prev).add(selectedWord));
       setToastMessage(`"${selectedWord}" 已收录到词库 ⭐`);
       setShowToast(true);
@@ -291,7 +291,7 @@ function SessionContent() {
     } finally {
       setIsSavingWord(false);
     }
-  }, [selectedWord]);
+  }, [selectedWord, wordTranslation]);
 
   // Handle click-away: close the drawer if clicking outside dialogue or the drawer itself
   useEffect(() => {

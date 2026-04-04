@@ -34,9 +34,15 @@ CREATE TABLE IF NOT EXISTS public.word_bank (
     interval INTEGER DEFAULT 0, -- Days to next review
     repetitions INTEGER DEFAULT 0,
     next_review TIMESTAMPTZ DEFAULT now(),
+    translation TEXT,
+    example_sentence TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
     UNIQUE(user_id, word) -- Constraint for upsert logic
 );
+
+-- Migration: run in Supabase SQL Editor
+ALTER TABLE public.word_bank ADD COLUMN IF NOT EXISTS translation TEXT;
+ALTER TABLE public.word_bank ADD COLUMN IF NOT EXISTS example_sentence TEXT;
 
 -- Table 4: User Profiles (Gamification & Social)
 CREATE TABLE IF NOT EXISTS public.profiles (

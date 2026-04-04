@@ -16,9 +16,10 @@ import {
   CheckCircle2,
   Brain,
   RotateCcw,
-  Trophy
+  Trophy,
+  Trash2
 } from 'lucide-react';
-import { getWordBank, updateWordStatus, type Word } from '@/lib/api';
+import { getWordBank, updateWordStatus, deleteFromWordBank, type Word } from '@/lib/api';
 import { useTTS } from '@/hooks/useTTS';
 import { cn } from '@/lib/utils';
 
@@ -72,6 +73,15 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
   const filteredWords = words.filter(w => 
     w.word.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleDeleteWord = async (word: string) => {
+    try {
+      await deleteFromWordBank(word);
+      setWords(prev => prev.filter(w => w.word !== word));
+    } catch (err) {
+      console.error("Failed to delete word:", err);
+    }
+  };
 
   const startReview = () => {
     if (words.length === 0) return;
@@ -383,6 +393,13 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
                            )}>
                              {word.status}
                            </div>
+                           <button
+                             onClick={(e) => { e.stopPropagation(); handleDeleteWord(word.word); }}
+                             className="p-2 rounded-xl text-[var(--outline)] hover:text-rose-400 hover:bg-rose-400/10 transition-all"
+                             title="删除单词"
+                           >
+                             <Trash2 size={16} strokeWidth={2.5} />
+                           </button>
                         </div>
                       </div>
                       

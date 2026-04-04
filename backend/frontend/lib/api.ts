@@ -248,11 +248,13 @@ export async function fetchWordTranslation(word: string, currentSessionId: strin
  */
 export async function addToWordBank(
   word: string,
-  exampleSentence: string
+  exampleSentence: string,
+  translation: string = ""
 ): Promise<{ status: string; word?: string; message?: string }> {
   const formData = new FormData();
   formData.append("word", word);
   formData.append("example_sentence", exampleSentence);
+  formData.append("translation", translation);
 
   const authHeader = await getAuthHeader();
   const response = await fetch(`${API_BASE_URL}/v1/word-bank/add`, {
@@ -263,6 +265,22 @@ export async function addToWordBank(
 
   if (!response.ok) throw new Error("无法添加单词到词库");
   return response.json();
+}
+
+/**
+ * Delete a word from the user's word bank.
+ */
+export async function deleteFromWordBank(word: string): Promise<void> {
+  const authHeader = await getAuthHeader();
+  const response = await fetch(
+    `${API_BASE_URL}/v1/word-bank/${encodeURIComponent(word)}`,
+    {
+      method: "DELETE",
+      headers: { ...authHeader },
+    }
+  );
+
+  if (!response.ok) throw new Error("无法从词库删除单词");
 }
 
 export async function getDashboardStats() {

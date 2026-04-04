@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import logging
 import os
 import asyncio
@@ -6,7 +9,6 @@ import uuid
 import uvicorn
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
-from dotenv import load_dotenv
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,8 +28,6 @@ from services.scenario_engine import scenario_engine
 from services.placement_engine import placement_engine
 from services.foundation import foundation_service
 from services.auth_service import get_current_user
-
-load_dotenv()
 
 app = FastAPI(title="AI English Learning Assistant API")
 
@@ -372,6 +372,7 @@ async def get_word_bank(user_id: str = Depends(get_current_user)):
 async def add_to_word_bank(
     word: str = Form(...),
     example_sentence: str = Form(...),
+    translation: str = Form(""),
     user_id: str = Depends(get_current_user)
 ):
     """Stub for adding a word to the bank. Phase 1 implementation."""
@@ -381,6 +382,7 @@ async def add_to_word_bank(
         data = {
             "user_id": user_id,
             "word": word,
+            "translation": translation,
             "example_sentence": example_sentence,
             "status": "new",
             "created_at": datetime.now().isoformat()
@@ -390,6 +392,24 @@ async def add_to_word_bank(
     except Exception as e:
         print(f"Error adding word: {e}")
         return {"status": "error", "message": str(e)}
+
+@app.delete("/v1/word-bank/{word_id}")
+async def delete_from_word_bank(
+    word_id: str,
+    user_id: str = Depends(get_current_user)
+):
+    if not db_service.is_available():
+        return {"status": "deleted", "word": word_id}
+    try:
+        result = db_service.client.table("word_bank")\
+            .delete()\
+            .eq("user_id", user_id)\
+            .eq("word", word_id)\
+            .execute()
+        return {"status": "deleted", "word": word_id}
+    except Exception as e:
+        print(f"Error deleting word: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
 
 @app.patch("/v1/word-bank/{word_id}/status")
 async def update_word_bank_status(
