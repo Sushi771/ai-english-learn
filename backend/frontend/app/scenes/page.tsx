@@ -11,6 +11,7 @@ import { forgeScenario } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const scenes = [
   { id: 'airport', icon: Plane, title: 'Airport Check-in', level: 'A1', desc: 'Navigate the check-in counter and security protocols.', difficulty: 1 },
@@ -57,11 +58,22 @@ export default function SceneSelector() {
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[var(--secondary)]/10 blur-[100px] rounded-full" />
       </div>
 
-      <header className="max-w-5xl mx-auto mb-16 relative z-10">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-[var(--outline)] hover:text-[var(--on-background)] transition-colors mb-8 luminary-glass luminary-border px-4 py-2 rounded-xl">
+      <header className="sticky top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-6 luminary-glass luminary-border mb-8">
+        <Link href="/dashboard" className="flex items-center gap-2 text-[var(--outline)] hover:text-[var(--primary)] transition-colors">
             <ChevronLeft size={18} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Back to Console</span>
+            <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">Back to Console</span>
         </Link>
+        <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <div className="flex items-center gap-2 px-3 py-1.5 luminary-glass luminary-border rounded-lg text-[var(--on-background)]">
+                <Filter className="w-3 h-3 text-[var(--secondary)]" />
+                <span className="text-[8px] font-black uppercase tracking-widest opacity-50">Level</span>
+                <span className="text-xs font-bold">{userLevel}</span>
+            </div>
+        </div>
+      </header>
+
+      <div className="max-w-5xl mx-auto mb-12 relative z-10">
         
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
             <div className="space-y-4">
@@ -73,10 +85,13 @@ export default function SceneSelector() {
                 </p>
             </div>
             
-            <div className="flex items-center gap-3 px-4 py-2 luminary-glass luminary-border rounded-xl">
-                <Filter className="w-4 h-4 text-[var(--secondary)]" />
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-50">Current Level</span>
-                <span className="text-sm font-bold text-[var(--on-background)]">{userLevel}</span>
+            <div className="flex items-center gap-4">
+                <ThemeToggle />
+                <div className="flex items-center gap-3 px-4 py-2 luminary-glass luminary-border rounded-xl text-[var(--on-background)] transition-all">
+                    <Filter className="w-4 h-4 text-[var(--secondary)]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-50 text-[var(--on-background)]">Current Level</span>
+                    <span className="text-sm font-bold">{userLevel}</span>
+                </div>
             </div>
         </div>
         
@@ -97,7 +112,7 @@ export default function SceneSelector() {
             Forge <Zap className="w-4 h-4" />
           </button>
         </div>
-      </header>
+      </div>
 
       <main className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10 pb-20">
         <AnimatePresence>
@@ -122,7 +137,7 @@ export default function SceneSelector() {
             whileHover={{ y: -8 }}
             transition={{ delay: index * 0.05 }}
             className={cn(
-                "p-10 luminary-card flex flex-col group cursor-pointer relative overflow-hidden",
+                "p-6 md:p-10 luminary-card flex flex-col group cursor-pointer relative overflow-hidden",
                 userLevel === scene.level ? "ring-2 ring-[var(--primary)]/20 shadow-2xl shadow-[var(--primary)]/10" : ""
             )}
             onClick={() => router.push(`/session?scenario=${encodeURIComponent(scene.title)}`)}

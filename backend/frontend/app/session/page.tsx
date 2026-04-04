@@ -18,7 +18,7 @@ import {
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import ProtocolGuard from '../../components/ProtocolGuard';
-import { processAudio, sendMessageStream, fetchWordTranslation, addToWordBank, PronunciationWord, createSession } from '@/lib/api';
+import { processAudio, sendMessageStream, fetchWordTranslation, addToWordBank, PronunciationWord, createSession, endSession } from '@/lib/api';
 import { useTTS } from '@/hooks/useTTS';
 import Notification from '@/components/Notification';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -416,6 +416,26 @@ function SessionContent() {
       setIsProcessing(false);
     }
   };
+  
+  const handleEndSession = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const res = await endSession(sessionId);
+      setToastMessage(`对话结束！本次得分：${res.score || 80} ⭐`);
+      setShowToast(true);
+      
+      // Delay redirect to allow toast to be seen
+      setTimeout(() => {
+        router.push('/');
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to end session:", err);
+      setToastMessage("结束对话失败，请重试");
+      setShowToast(true);
+      setIsProcessing(false);
+    }
+  };
 
   // ── Render AI bubble content with clickable words ───────────────────────
   const renderAIContent = (msg: Message, isLast: boolean) => (
@@ -473,7 +493,7 @@ function SessionContent() {
         </div>
 
         {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6 md:px-12 backdrop-blur-3xl border-b luminary-border bg-[var(--background)]/50">
+        <header className="fixed top-0 left-0 right-0 z-50 h-14 px-6 md:px-12 backdrop-blur-3xl border-b luminary-border bg-[var(--background)]/50 flex items-center">
           <div className="max-w-[1920px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-6">
               <button
@@ -483,7 +503,7 @@ function SessionContent() {
                 <ArrowLeft size={20} />
               </button>
               <div className="flex flex-col">
-                <h2 className="display-lg text-xl md:text-2xl font-bold uppercase tracking-tight text-[var(--on-background)]">
+                <h2 className="display-lg text-lg md:text-xl font-bold uppercase tracking-tight text-[var(--on-background)] truncate max-w-[150px] md:max-w-none">
                   {rawScenario}
                 </h2>
                 <div className="flex items-center gap-3">
@@ -505,6 +525,13 @@ function SessionContent() {
 
             <div className="flex items-center gap-6">
               <ThemeToggle />
+              <button
+                onClick={handleEndSession}
+                disabled={isProcessing}
+                className="px-6 py-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 font-black uppercase tracking-widest text-xs hover:bg-rose-500 hover:text-white transition-all disabled:opacity-50"
+              >
+                结束
+              </button>
               <button
                 onClick={() => setIsHUDExpanded(!isHUDExpanded)}
                 className="p-3 rounded-2xl luminary-glass luminary-border text-[var(--on-background)] shadow-2xl hover:scale-110 transition-all"
@@ -539,7 +566,7 @@ function SessionContent() {
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className={cn(
-                      "relative group max-w-[85%] md:max-w-[70%]",
+                      "relative group max-w-[90%] md:max-w-[75%]",
                       msg.role === 'user' ? "items-end" : "items-start"
                     )}>
                       {/* Bubble */}
@@ -713,7 +740,7 @@ function SessionContent() {
         </div>
 
         {/* Footer input bar */}
-        <footer className="fixed bottom-0 left-0 right-0 z-50 p-6 md:p-10 backdrop-blur-3xl bg-[var(--background)]/50 border-t luminary-border">
+        <footer className="fixed bottom-0 left-0 right-0 z-50 p-4 md:p-8 pb-safe backdrop-blur-3xl bg-[var(--background)]/50 border-t luminary-border shadow-[0_-20px_40px_rgba(0,0,0,0.1)]">
           <div className="max-w-[1920px] mx-auto flex items-center justify-center gap-12">
             <div className="flex-1 max-w-3xl relative group">
               <div className="absolute inset-0 bg-[var(--primary)]/5 rounded-[2.5rem] blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
@@ -744,16 +771,16 @@ function SessionContent() {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => (isRecording ? stopRecording() : startRecording())}
                 className={cn(
-                  "w-24 h-24 rounded-full transition-all flex items-center justify-center relative shadow-2xl overflow-hidden border-4",
+                  "w-16 h-16 md:w-24 md:h-24 rounded-full transition-all flex items-center justify-center relative shadow-2xl overflow-hidden border-4",
                   isRecording
                     ? "bg-rose-500 border-rose-400"
                     : "luminary-glass luminary-border text-[var(--primary)] hover:scale-105"
                 )}
               >
                 {isRecording ? (
-                  <WaveformVisualizer barHeights={barHeights} isActive={isRecording} className="w-16" />
+                  <WaveformVisualizer barHeights={barHeights} isActive={isRecording} className="w-10 md:w-16" />
                 ) : (
-                  <Mic className="w-10 h-10 transition-transform" strokeWidth={3} />
+                  <Mic className="w-6 h-6 md:w-10 md:h-10 transition-transform" strokeWidth={3} />
                 )}
               </motion.button>
               <span className="text-[10px] font-black uppercase mt-3 tracking-widest opacity-40">

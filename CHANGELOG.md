@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.0] - 2026-04-04
+
+### Fixed
+- **WordBank Persistence (SM-2):**
+    - Corrected column naming mismatch from `repetition` to `repetitions` in SQL and Python models.
+    - Sanitized Supabase `UPDATE` payload to remove non-existent columns (`status`, `updated_at`) that were causing schema cache errors.
+    - Resolved issue where `interval` and `repetitions` remained at 0 after multiple reviews.
+- **Backend Stability:** 
+    - Fixed `KeyboardInterrupt` hang during `litellm` remote model cost fetching on startup.
+    - Cleaned up debug print statements from production code.
+
+### Added
+- **SM-2 Core Engine:** Fully integrated `SchedulerService` into the word review endpoint with verified persistence.
+
 ## [2.5.0] - 2026-04-03
 
 ### Added

@@ -197,7 +197,10 @@ async def create_session(
     return {"session_id": session_id}
 
 @app.post("/v1/tts")
-async def text_to_speech(data: Dict[str, str]):
+async def text_to_speech(
+    data: Dict[str, str],
+    user_id: str = Depends(get_current_user)
+):
     """Generate high-quality neural TTS from text."""
     text = data.get("text")
     if not text:
@@ -239,15 +242,22 @@ async def get_dashboard_sessions(user_id: str = Depends(get_current_user)):
 
 @app.post("/v1/session/end")
 async def end_session(
-    session_id: str = Form(...),
-    score: int = Form(0),
+    data: Dict[str, Any],
     user_id: str = Depends(get_current_user)
 ):
-    """End a learning session and record the final score."""
+    """End a learning session and return a fixed score."""
+    session_id = data.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=422, detail="session_id is required")
+        
+    score = 80 # Fixed score for this version
     await db_service.end_session(session_id, score)
-    # Award some XP for completing a session
-    await db_service.update_user_score(user_id, points=score)
-    return {"status": "success", "session_id": session_id}
+    
+    return {
+        "status": "success", 
+        "session_id": session_id,
+        "score": score
+    }
 
 @app.get("/v1/challenge/words")
 async def get_challenge_words(user_id: str = Depends(get_current_user), limit: int = 5):
@@ -348,8 +358,11 @@ async def get_foundation_curriculum():
     return foundation_service.get_all_lessons()
 
 @app.get("/v1/word-bank")
-async def get_word_bank(user_id: str = Depends(get_current_user)):
-    """Fetch the user's word bank from Supabase."""
+async def get_word_bank(
+    due_only: bool = False,
+    user_id: str = Depends(get_current_user)
+):
+    """Fetch the user's word bank from Supabase, optionally filtered by due date."""
     if not db_service.is_available():
         return [
             {"word": "aesthetic", "mastery_level": 1, "next_review": (datetime.now() + timedelta(days=1)).isoformat()},
@@ -358,12 +371,8 @@ async def get_word_bank(user_id: str = Depends(get_current_user)):
         ]
     
     try:
-        result = db_service.client.table("word_bank") \
-            .select("*") \
-            .eq("user_id", user_id) \
-            .order("next_review", desc=False) \
-            .execute()
-        return result.data
+        data = await db_service.get_word_bank(user_id, due_only=due_only)
+        return data
     except Exception as e:
         print(f"Error fetching word bank: {e}")
         return []
@@ -411,6 +420,45 @@ async def delete_from_word_bank(
         print(f"Error deleting word: {e}")
         raise HTTPException(status_code=404, detail=str(e))
 
+@app.post("/v1/word-bank/review")
+async def review_word(
+    data: Dict[str, Any],
+    user_id: str = Depends(get_current_user)
+):
+    """Refined SM-2 review endpoint."""
+    word_id = data.get("word_id")
+    quality = data.get("quality")
+    
+    if word_id is None or quality is None:
+        raise HTTPException(status_code=422, detail="word_id and quality are required")
+        
+    if not db_service.is_available():
+        return {"next_review": (datetime.now() + timedelta(days=1)).date().isoformat(), "interval": 1, "mastery_level": 1}
+
+    try:
+        record = await db_service.get_word_record(user_id, word_id)
+        if not record:
+            raise HTTPException(status_code=404, detail="Word not found in bank")
+
+        sm2_result = scheduler.get_next_review(
+            quality=int(quality),
+            ease=record.get("ease", 2.5) or 2.5,
+            interval=record.get("interval", 0) or 0,
+            repetitions=record.get("repetitions", 0) or 0
+        )
+        
+        await db_service.update_word_sm2(user_id, word_id, sm2_result)
+        
+        return {
+            "next_review": sm2_result["next_review"],
+            "interval": sm2_result["interval"],
+            "mastery_level": sm2_result["mastery_level"],
+            "status": sm2_result["status"]
+        }
+    except Exception as e:
+        print(f"Error in review_word: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.patch("/v1/word-bank/{word_id}/status")
 async def update_word_bank_status(
     word_id: str,
@@ -427,35 +475,20 @@ async def update_word_bank_status(
         return {"success": True, "offline": True}
         
     try:
-        # In this project, word_id is often the word string itself
-        # Fetch existing record for this word
         record = await db_service.get_word_record(uid, word_id)
         
-        # Mapping frontend status to quality scores
-        # 'mastered' (Easy) -> 5
-        # 'reviewing' (Hard) -> 3
-        # 'new' (Forgot) -> 1
         quality_map = {"mastered": 5, "reviewing": 3, "new": 1}
         quality = quality_map.get(status, 3) 
         
         if record:
-            # Use existing stats if available, otherwise use defaults
-            current_ease = record.get("ease", 2.5) or 2.5
-            current_interval = record.get("interval", 0) or 0
-            current_reps = record.get("repetitions", 0) or 0
-            
-            # Calculate next review with SM-2
             sm2_result = scheduler.get_next_review(
                 quality=quality,
-                ease=current_ease,
-                interval=current_interval,
-                repetitions=current_reps
+                ease=record.get("ease", 2.5) or 2.5,
+                interval=record.get("interval", 0) or 0,
+                repetitions=record.get("repetitions", 0) or 0
             )
-            
-            # Update word with complete SM-2 data
-            await db_service.update_word_sm2(uid, word_id, sm2_result, status)
+            await db_service.update_word_sm2(uid, word_id, sm2_result)
         else:
-            # Fallback if record not found (shouldn't happen with valid word_id)
             await db_service.update_word_status(uid, word_id, status)
             
         return {"success": True}

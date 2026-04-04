@@ -24,6 +24,7 @@ import { getDashboardStats, getRecentSessions, forgeScenario, getLearningStreak 
 import Challenge from "./Challenge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import ThemeToggle from "./ThemeToggle";
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "Just Now";
@@ -120,6 +121,7 @@ const AIDashboard = ({ onStartSession, onOpenWordBank }: AIDashboardProps) => {
         </div>
 
         <div className="flex items-center gap-4 md:gap-8">
+          <ThemeToggle />
           <div className="hidden md:flex items-center gap-3 px-5 py-2.5 luminary-glass luminary-border rounded-full">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-xs font-black uppercase tracking-widest opacity-80">

@@ -82,11 +82,11 @@ class DatabaseService:
         except Exception as e:
             print(f"DB Error (upsert_word_bank): {e}")
 
-    async def get_word_record(self, user_id: str, word: str) -> Optional[Dict]:
+    async def get_word_record(self, user_id: str, word_id: str) -> Optional[Dict]:
         if not self.client: return None
         try:
-            # Case-insensitive or exact match? word_bank UNIQUE(user_id, word) is exact.
-            result = self.client.table("word_bank").select("*").eq("user_id", user_id).eq("word", word).execute()
+            # Always search by internal UUID 'id' as primary key
+            result = self.client.table("word_bank").select("*").eq("user_id", user_id).eq("id", word_id).execute()
             return result.data[0] if result.data else None
         except Exception as e:
             print(f"DB Error (get_word_record): {e}")
@@ -225,31 +225,39 @@ class DatabaseService:
             print(f"DB Error (get_recent_sessions): {e}")
             return []
 
-    async def get_word_bank(self, user_id: str) -> List[Dict]:
+    async def get_word_bank(self, user_id: str, due_only: bool = False) -> List[Dict]:
         if not self.client: return []
         try:
-            result = self.client.table("word_bank") \
+            query = self.client.table("word_bank") \
                 .select("*") \
-                .eq("user_id", user_id) \
-                .execute()
+                .eq("user_id", user_id)
+            
+            if due_only:
+                now = datetime.now().isoformat()
+                # Due if next_review <= now OR next_review is NULL
+                # Supabase doesn't have a direct OR for filter chains easily without RPC or filter string, 
+                # but we can filter lte then handle NULL separately or use filter string.
+                query = query.or_(f"next_review.lte.{now},next_review.is.null")
+            
+            result = query.execute()
             return result.data or []
         except Exception as e:
             print(f"DB Error (get_word_bank): {e}")
             return []
 
-    async def update_word_sm2(self, user_id: str, word: str, sm2_data: Dict[str, Any], status: str):
+    async def update_word_sm2(self, user_id: str, word_id: str, sm2_data: Dict[str, Any]):
         """Update the SM-2 data and status of a word."""
-        if not self.client or not word: return
+        if not self.client or not word_id: return
         data = {
-            "status": status,
             "ease": sm2_data["ease"],
             "interval": sm2_data["interval"],
             "repetitions": sm2_data["repetitions"],
-            "next_review": sm2_data["next_review"].isoformat(),
-            "updated_at": datetime.now().isoformat()
+            "mastery_level": sm2_data["mastery_level"],
+            "next_review": sm2_data["next_review"]
         }
         try:
-            self.client.table("word_bank").update(data).eq("user_id", user_id).eq("word", word).execute()
+            # Use UUID 'id' as primary key for updates
+            self.client.table("word_bank").update(data).eq("user_id", user_id).eq("id", word_id).execute()
         except Exception as e:
             print(f"DB Error (update_word_sm2): {e}")
 
@@ -310,15 +318,15 @@ class DatabaseService:
             print(f"DB Error (get_learning_streak): {e}")
             return {"streak": 0, "total_days": 0}
 
-    async def update_word_status(self, user_id: str, word: str, status: str):
+    async def update_word_status(self, user_id: str, word_id: str, status: str):
         """Simple update for status only."""
-        if not self.client or not word: return
+        if not self.client or not word_id: return
         data = {
             "status": status,
             "updated_at": datetime.now().isoformat()
         }
         try:
-            self.client.table("word_bank").update(data).eq("user_id", user_id).eq("word", word).execute()
+            self.client.table("word_bank").update(data).eq("user_id", user_id).eq("id", word_id).execute()
         except Exception as e:
             print(f"DB Error (update_word_status): {e}")
 

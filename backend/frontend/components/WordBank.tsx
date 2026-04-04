@@ -19,7 +19,7 @@ import {
   Trophy,
   Trash2
 } from 'lucide-react';
-import { getWordBank, updateWordStatus, deleteFromWordBank, type Word } from '@/lib/api';
+import { getWordBank, updateWordStatus, deleteFromWordBank, reviewWord, type Word } from '@/lib/api';
 import { useTTS } from '@/hooks/useTTS';
 import { cn } from '@/lib/utils';
 
@@ -40,10 +40,10 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
   
   const { speak } = useTTS();
 
-  const fetchWords = async () => {
+  const fetchWords = async (dueOnly: boolean = false) => {
     setLoading(true);
     try {
-      const data = await getWordBank();
+      const data = await getWordBank(dueOnly);
       // Ensure backend data matches our Word interface
       const normalizedData = data.map((item: any) => ({
         id: item.id || item.word, // Fallback to word string if no UUID
@@ -53,8 +53,10 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
         status: item.status || 'new'
       }));
       setWords(normalizedData);
+      return normalizedData;
     } catch (err) {
       console.error("Failed to fetch word bank:", err);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -83,8 +85,16 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
     }
   };
 
-  const startReview = () => {
-    if (words.length === 0) return;
+  const startReview = async () => {
+    // Re-fetch only due words when starting review
+    const dueWords = await fetchWords(true);
+    
+    if (dueWords.length === 0) {
+      setIsReviewMode(true);
+      setShowSummary(true);
+      return;
+    }
+    
     setIsReviewMode(true);
     setCurrentCardIndex(0);
     setIsFlipped(false);
@@ -92,26 +102,31 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
     setShowSummary(false);
   };
 
-  const handleReviewAction = async (status: 'new' | 'reviewing' | 'mastered') => {
+  /**
+   * Handle SM-2 quality scoring
+   * 1: Forgot
+   * 3: Hard/Vague
+   * 5: Easy/Mastered
+   */
+  const handleReviewAction = async (quality: 1 | 3 | 5) => {
     const word = words[currentCardIndex];
-    
-    // Update locally for immediate feedback
-    setWords(prev => prev.map((w, idx) => idx === currentCardIndex ? { ...w, status } : w));
+    if (!word) return;
+
+    // Call API with quality score
+    try {
+      const result = await reviewWord(word.id, quality);
+      // Update locally if needed, though we move to next card
+    } catch (err) {
+      console.error("Failed to submit review:", err);
+    }
     
     // Update summary counters
     setReviewResults(prev => ({
       ...prev,
-      forgot: status === 'new' ? prev.forgot + 1 : prev.forgot,
-      hard: status === 'reviewing' ? prev.hard + 1 : prev.hard,
-      easy: status === 'mastered' ? prev.easy + 1 : prev.easy,
+      forgot: quality === 1 ? prev.forgot + 1 : prev.forgot,
+      hard: quality === 3 ? prev.hard + 1 : prev.hard,
+      easy: quality === 5 ? prev.easy + 1 : prev.easy,
     }));
-
-    // Call API
-    try {
-      await updateWordStatus(word.id, status);
-    } catch (err) {
-      console.error("Failed to update status:", err);
-    }
 
     // Move to next card or show summary
     if (currentCardIndex < words.length - 1) {
@@ -273,19 +288,19 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
                           className="mt-12 flex gap-4 w-full"
                         >
                           <button 
-                            onClick={(e) => { e.stopPropagation(); handleReviewAction('new'); }}
+                            onClick={(e) => { e.stopPropagation(); handleReviewAction(1); }}
                             className="flex-1 bg-rose-500/10 border-2 border-rose-500/30 text-rose-500 py-6 rounded-3xl font-black uppercase tracking-[0.1em] text-xs hover:bg-rose-500 hover:text-white transition-all shadow-lg active:scale-95"
                           >
                             不认识
                           </button>
                           <button 
-                            onClick={(e) => { e.stopPropagation(); handleReviewAction('reviewing'); }}
+                            onClick={(e) => { e.stopPropagation(); handleReviewAction(3); }}
                             className="flex-1 bg-amber-500/10 border-2 border-amber-500/30 text-amber-500 py-6 rounded-3xl font-black uppercase tracking-[0.1em] text-xs hover:bg-amber-500 hover:text-white transition-all shadow-lg active:scale-95"
                           >
                             模糊
                           </button>
                           <button 
-                            onClick={(e) => { e.stopPropagation(); handleReviewAction('mastered'); }}
+                            onClick={(e) => { e.stopPropagation(); handleReviewAction(5); }}
                             className="flex-1 bg-[var(--primary)] border-2 border-[var(--primary)] text-[var(--on-primary)] py-6 rounded-3xl font-black uppercase tracking-[0.1em] text-xs hover:scale-105 transition-all shadow-[0_20px_40px_rgba(186,158,255,0.3)] active:scale-95"
                           >
                             已掌握

@@ -417,29 +417,48 @@ export async function getChallengeWords() {
   }
 }
 
-export async function getWordBank() {
+export async function getWordBank(dueOnly: boolean = false) {
   const authHeader = await getAuthHeader();
-  const response = await fetch(`${API_BASE_URL}/v1/word-bank`, {
+  const url = dueOnly ? `${API_BASE_URL}/v1/word-bank?due_only=true` : `${API_BASE_URL}/v1/word-bank`;
+  const response = await fetch(url, {
     headers: { ...authHeader }
   });
   if (!response.ok) throw new Error("无法加载词库");
   return response.json();
 }
 
-export async function endSession(sessionId: string, score: number = 0) {
-  const formData = new FormData();
-  formData.append("session_id", sessionId);
-  formData.append("score", score.toString());
+/**
+ * Submit an SM-2 review score for a word.
+ * quality: 1 (forgot), 3 (vague), 5 (mastered)
+ */
+export async function reviewWord(wordId: string, quality: number) {
+  const authHeader = await getAuthHeader();
+  const response = await fetch(`${API_BASE_URL}/v1/word-bank/review`, {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+      ...authHeader 
+    },
+    body: JSON.stringify({ word_id: wordId, quality }),
+  });
+  if (!response.ok) throw new Error("无法提交复习评分");
+  return response.json();
+}
 
+export async function endSession(sessionId: string) {
   const authHeader = await getAuthHeader();
   const response = await fetch(`${API_BASE_URL}/v1/session/end`, {
     method: "POST",
-    headers: { ...authHeader },
-    body: formData,
+    headers: { 
+      ...authHeader,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ session_id: sessionId }),
   });
 
   if (!response.ok) {
     console.error("Failed to end session");
+    return { status: "error" };
   }
   return response.json();
 }

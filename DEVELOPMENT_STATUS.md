@@ -24,7 +24,7 @@
 - [x] **Multi-model Router (v2.3)**: 实现统一的模型调用接口，支持在设置页面动态切换 GLM-4 Flash / GLM-4.5 Air。
 - [x] **Luminary UI Overhaul (v2.5)**: 实现了全量 CSS 变量架构、24px 毛玻璃滤镜系统、Manrope 与 Inter 字体联动排版。
 - [x] **Streaming & Interactivity Refine (v2.4)**: 配合流式输出增加了打字机光标 (Typing Cursor) 与自动滚动功能。
-- [x] **Auth 架构升级**: 切换至 JWKS 公钥验签模式，增强了与 Supabase Auth 的集成稳定性。
+- [x] **SM-2 Persistence Fix (v2.6)**: Resolved database schema mismatches and payload errors, ensuring review progress is correctly saved to Supabase.
 
 ## 5. 参与代理 (Active Agents)
 - **`agency-ux-architect`**: 设计并实现了 Luminary 2.0 触感系统与格栅脊柱布局。
@@ -33,4 +33,4 @@
 - **`agency-technical-writer`**: 负责全量文档 (APISpecs, Architecture, Roadmap) 的同步与架构固化。
 
 ---
-*Last Refined by Agentic Workflow at: 2026-04-03 21:35 (v2.5 Luminary Overhaul)*
+*Last Refined by Agentic Workflow at: 2026-04-04 23:55 (v2.6 SM-2 Fix & Refine)*
