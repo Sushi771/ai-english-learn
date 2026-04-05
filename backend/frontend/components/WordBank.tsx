@@ -37,13 +37,14 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [reviewResults, setReviewResults] = useState<{ forgot: number; hard: number; easy: number }>({ forgot: 0, hard: 0, easy: 0 });
   const [showSummary, setShowSummary] = useState(false);
+  const [tomorrowCount, setTomorrowCount] = useState(0);
   
   const { speak } = useTTS();
 
   const fetchWords = async (dueOnly: boolean = false) => {
     setLoading(true);
     try {
-      const data = await getWordBank(dueOnly);
+      const data = await getWordBank({ dueOnly });
       // Ensure backend data matches our Word interface
       const normalizedData = data.map((item: any) => ({
         id: item.id || item.word, // Fallback to word string if no UUID
@@ -65,6 +66,10 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
   useEffect(() => {
     if (isOpen) {
       fetchWords();
+      // Also fetch tomorrow's count
+      getWordBank({ dueTomorrow: true }).then(data => {
+        setTomorrowCount(data.length);
+      }).catch(() => {});
     } else {
       // Reset state when closing
       setIsReviewMode(false);
@@ -441,15 +446,26 @@ export default function WordBank({ isOpen, onClose }: WordBankProps) {
 
               {/* Footer */}
               <div className="p-10 border-t luminary-border bg-[var(--on-background)]/5 relative z-10">
-                <button 
-                  className="w-full bg-[var(--primary)] py-6 rounded-3xl text-[var(--on-primary)] font-black uppercase tracking-[0.2em] text-sm shadow-[0_20px_50px_rgba(186,158,255,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale"
-                  onClick={startReview}
-                  disabled={words.length === 0}
-                >
-                  <Brain size={20} strokeWidth={3} className="fill-current" />
-                  开启词汇抗遗忘训练
-                  <ChevronRight size={20} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
-                </button>
+                <div className="relative">
+                  <button 
+                    className="w-full bg-[var(--primary)] py-6 rounded-3xl text-[var(--on-primary)] font-black uppercase tracking-[0.2em] text-sm shadow-[0_20px_50px_rgba(186,158,255,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale"
+                    onClick={startReview}
+                    disabled={words.length === 0}
+                  >
+                    <Brain size={20} strokeWidth={3} className="fill-current" />
+                    开启词汇抗遗忘训练
+                    <ChevronRight size={20} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                  {tomorrowCount > 0 && (
+                    <motion.div 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-3 -right-3 px-3 py-1 bg-amber-500 text-white text-[10px] font-black rounded-full border-2 border-[var(--background)] shadow-lg z-20"
+                    >
+                      明日待复习 {tomorrowCount}
+                    </motion.div>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}

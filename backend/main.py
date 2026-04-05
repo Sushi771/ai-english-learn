@@ -62,6 +62,7 @@ async def process_audio(
     session_id: str = Form(...),
     scenario: str = Form("General Conversation"),
     model_id: Optional[str] = Form(None),
+    target_phrases: Optional[str] = Form(None),
     user_id: str = Depends(get_current_user)
 ):
     """Receive audio, transcribe it, and get an AI response."""
@@ -77,6 +78,15 @@ async def process_audio(
         raise HTTPException(status_code=400, detail="Transcription failed")
 
     print(f"[DEBUG] ASR Transcript: {transcript}")
+
+    # Parse target_phrases if provided as JSON string from Form
+    phrases = []
+    if target_phrases:
+        try:
+            import json
+            phrases = json.loads(target_phrases)
+        except:
+            phrases = []
 
     # 3. Process as a chat message
     # Logic extracted from /v1/chat to ensure consistency
@@ -95,6 +105,7 @@ async def process_audio(
         role="fast_streamer",
         scenario=scenario,
         review_words=review_words,
+        target_phrases=phrases,
         stream=False
     )
 
@@ -115,6 +126,7 @@ async def chat(
     session_id = data.get("session_id")
     text = data.get("text")
     scenario = data.get("scenario", "General Conversation")
+    target_phrases = data.get("target_phrases", [])
     model_id = data.get("model_id") or os.getenv("DEFAULT_MODEL", "glm-4-flash")
     raw_stream = data.get("stream", False)
     stream = raw_stream is True or str(raw_stream).lower() == "true"
@@ -148,6 +160,7 @@ async def chat(
                     role="fast_streamer", 
                     scenario=scenario,
                     review_words=review_words,
+                    target_phrases=target_phrases,
                     stream=True
                 )
                 
@@ -177,6 +190,7 @@ async def chat(
         role="fast_streamer", 
         scenario=scenario,
         review_words=review_words,
+        target_phrases=target_phrases,
         stream=False
     )
 
@@ -245,18 +259,23 @@ async def end_session(
     data: Dict[str, Any],
     user_id: str = Depends(get_current_user)
 ):
-    """End a learning session and return a fixed score."""
+    """End a learning session and return a dynamic score based on corrections."""
     session_id = data.get("session_id")
     if not session_id:
         raise HTTPException(status_code=422, detail="session_id is required")
-        
-    score = 80 # Fixed score for this version
-    await db_service.end_session(session_id, score)
+    
+    # Task A-2: Get corrections and calculate score
+    corrections = await db_service.get_session_corrections(session_id)
+    correction_count = len(corrections)
+    total_score = max(0, 100 - correction_count * 10)
+    
+    await db_service.end_session(session_id, total_score)
     
     return {
-        "status": "success", 
+        "success": True, 
         "session_id": session_id,
-        "score": score
+        "total_score": total_score,
+        "corrections": corrections
     }
 
 @app.get("/v1/challenge/words")
@@ -360,9 +379,12 @@ async def get_foundation_curriculum():
 @app.get("/v1/word-bank")
 async def get_word_bank(
     due_only: bool = False,
+    due_tomorrow: bool = False,
     user_id: str = Depends(get_current_user)
 ):
     """Fetch the user's word bank from Supabase, optionally filtered by due date."""
+    if due_only and due_tomorrow:
+        raise HTTPException(status_code=400, detail="due_only and due_tomorrow cannot be both True")
     if not db_service.is_available():
         return [
             {"word": "aesthetic", "mastery_level": 1, "next_review": (datetime.now() + timedelta(days=1)).isoformat()},
@@ -371,7 +393,7 @@ async def get_word_bank(
         ]
     
     try:
-        data = await db_service.get_word_bank(user_id, due_only=due_only)
+        data = await db_service.get_word_bank(user_id, due_only=due_only, due_tomorrow=due_tomorrow)
         return data
     except Exception as e:
         print(f"Error fetching word bank: {e}")

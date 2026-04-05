@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 /**
  * Hook to perform high-quality neural TTS using edge-tts via backend.
@@ -41,18 +42,33 @@ export const useTTS = () => {
         stop();
 
         try {
-            const response = await fetch("http://localhost:8080/v1/tts", {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                console.warn("TTS skipped: no session");
+                return; // Silent skip as requested
+            }
+
+            // Extract the English portion only: 
+            // Handles "English / Translation" or "English\nTranslation" formats
+            const englishOnly = text.split('/')[0].split('\n')[0].trim();
+
+            const response = await fetch("/v1/tts", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify({ 
-                    text,
+                    text: englishOnly,
                     voice: lang === "zh-CN" ? "zh-CN-XiaoxiaoNeural" : "en-US-AriaNeural"
                 }),
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    console.warn("TTS unauthorized (401)");
+                    return;
+                }
                 throw new Error("TTS fetch failed");
             }
 

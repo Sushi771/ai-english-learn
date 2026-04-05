@@ -58,11 +58,20 @@ class ScenarioEngine:
             client = get_llm_client(model_id)
             response = await client.chat(messages)
             
-            clean_json = response
-            if "```json" in response:
-                clean_json = response.split("```json")[1].split("```")[0].strip()
-            elif "```" in response:
-                clean_json = response.split("```")[1].split("```")[0].strip()
+            clean_json = response.strip()
+            if "```json" in clean_json:
+                clean_json = clean_json.split("```json")[1].split("```")[0].strip()
+            elif "```" in clean_json:
+                clean_json = clean_json.split("```")[1].split("```")[0].strip()
+            else:
+                # Fallback: extract the content between the first { and the last }
+                try:
+                    start_idx = clean_json.find('{')
+                    end_idx = clean_json.rfind('}')
+                    if start_idx != -1 and end_idx != -1:
+                        clean_json = clean_json[start_idx:end_idx+1]
+                except:
+                    pass
                 
             data = json.loads(clean_json)
             data["level"] = level

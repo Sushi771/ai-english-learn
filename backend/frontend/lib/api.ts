@@ -54,13 +54,17 @@ export interface PronunciationResult {
 /**
  * Process audio by sending it to /v1/process-audio for STT and LLM response.
  */
-export async function processAudio(audioBlob: Blob, sessionId: string, scenario: string) {
+export async function processAudio(audioBlob: Blob, sessionId: string, scenario: string, targetPhrases?: string[]) {
   const settings = getAppSettings();
   const formData = new FormData();
   formData.append("audio", audioBlob, "recording.webm");
   formData.append("session_id", sessionId);
   formData.append("scenario", scenario);
   formData.append("level", settings.level);
+  
+  if (targetPhrases && targetPhrases.length > 0) {
+    formData.append("target_phrases", JSON.stringify(targetPhrases));
+  }
   
   const model_id = localStorage.getItem("preferred_model") || "glm-4-flash";
   formData.append("model_id", model_id);
@@ -88,7 +92,7 @@ export async function processAudio(audioBlob: Blob, sessionId: string, scenario:
   };
 }
 
-export async function sendMessage(text: string, scenario: string, sessionId: string = "default-session") {
+export async function sendMessage(text: string, scenario: string, sessionId: string = "default-session", targetPhrases?: string[]) {
   const settings = getAppSettings();
   const model_id = localStorage.getItem("preferred_model") ?? "glm-4-flash";
   
@@ -97,7 +101,8 @@ export async function sendMessage(text: string, scenario: string, sessionId: str
     session_id: sessionId,
     scenario: scenario,
     level: settings.level,
-    model_id: model_id
+    model_id: model_id,
+    target_phrases: targetPhrases
   };
 
   const authHeader = await getAuthHeader();
@@ -130,7 +135,8 @@ export async function sendMessageStream(
   sessionId: string = "default-session",
   onChunk: (chunk: string) => void,
   onDone: (fullText: string) => void,
-  onError?: (err: Error) => void
+  onError?: (err: Error) => void,
+  targetPhrases?: string[]
 ): Promise<void> {
   const settings = getAppSettings();
   // Try preferred_model first, fallback to selected_model_id, then glm-4-flash
@@ -144,7 +150,8 @@ export async function sendMessageStream(
     scenario,
     level: settings.level,
     model_id,
-    stream: true
+    stream: true,
+    target_phrases: targetPhrases
   };
 
   try {
@@ -417,9 +424,18 @@ export async function getChallengeWords() {
   }
 }
 
-export async function getWordBank(dueOnly: boolean = false) {
+export async function getWordBank(options?: { dueOnly?: boolean; dueTomorrow?: boolean }) {
+  const { dueOnly = false, dueTomorrow = false } = options || {};
   const authHeader = await getAuthHeader();
-  const url = dueOnly ? `${API_BASE_URL}/v1/word-bank?due_only=true` : `${API_BASE_URL}/v1/word-bank`;
+  
+  let url = `${API_BASE_URL}/v1/word-bank`;
+  const params = new URLSearchParams();
+  if (dueOnly) params.append("due_only", "true");
+  if (dueTomorrow) params.append("due_tomorrow", "true");
+  
+  const queryString = params.toString();
+  if (queryString) url += `?${queryString}`;
+
   const response = await fetch(url, {
     headers: { ...authHeader }
   });
@@ -445,7 +461,13 @@ export async function reviewWord(wordId: string, quality: number) {
   return response.json();
 }
 
-export async function endSession(sessionId: string) {
+export interface SessionEndResult {
+  success: boolean;
+  total_score: number;
+  corrections: string[];
+}
+
+export async function endSession(sessionId: string): Promise<SessionEndResult | { status: string }> {
   const authHeader = await getAuthHeader();
   const response = await fetch(`${API_BASE_URL}/v1/session/end`, {
     method: "POST",

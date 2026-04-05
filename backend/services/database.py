@@ -49,6 +49,33 @@ class DatabaseService:
         except Exception as e:
             print(f"DB Error (end_session): {e}")
 
+    async def get_session_corrections(self, session_id: str) -> List[str]:
+        """
+        [Pre-step Confirmation]: Confirmed using 'chat_logs' table for message storage.
+        Formatting rule '\n\nCorrection: ' has been added to the system prompt in llm.py.
+        """
+        if not self.client: return []
+        try:
+            res = self.client.table("chat_logs") \
+                .select("content") \
+                .eq("session_id", session_id) \
+                .eq("role", "assistant") \
+                .execute()
+            
+            corrections = []
+            for row in res.data:
+                content = row.get("content", "")
+                if "Correction:" in content:
+                    parts = content.split("Correction:")
+                    if len(parts) > 1:
+                        corr_text = parts[-1].strip()
+                        if corr_text:
+                            corrections.append(corr_text)
+            return corrections
+        except Exception as e:
+            print(f"DB Error (get_session_corrections): {e}")
+            return []
+
     async def add_chat_log(self, session_id: str, role: str, content: str, audio_url: Optional[str] = None):
         if not self.client: return
         data = {
@@ -225,8 +252,12 @@ class DatabaseService:
             print(f"DB Error (get_recent_sessions): {e}")
             return []
 
-    async def get_word_bank(self, user_id: str, due_only: bool = False) -> List[Dict]:
+    async def get_word_bank(self, user_id: str, due_only: bool = False, due_tomorrow: bool = False) -> List[Dict]:
         if not self.client: return []
+        if due_only and due_tomorrow:
+            # Although returning 400 is specified for the API, here we just return empty or priority
+            return []
+
         try:
             query = self.client.table("word_bank") \
                 .select("*") \
@@ -234,10 +265,13 @@ class DatabaseService:
             
             if due_only:
                 now = datetime.now().isoformat()
-                # Due if next_review <= now OR next_review is NULL
-                # Supabase doesn't have a direct OR for filter chains easily without RPC or filter string, 
-                # but we can filter lte then handle NULL separately or use filter string.
                 query = query.or_(f"next_review.lte.{now},next_review.is.null")
+            elif due_tomorrow:
+                # Tomorrow UTC 00:00:00 to 23:59:59
+                tomorrow = date.today() + timedelta(days=1)
+                start = datetime.combine(tomorrow, datetime.min.time()).isoformat()
+                end = datetime.combine(tomorrow, datetime.max.time()).isoformat()
+                query = query.gte("next_review", start).lte("next_review", end)
             
             result = query.execute()
             return result.data or []

@@ -10,10 +10,10 @@ class ModelGateway:
         self.linguistic_master = self.default_model
         self.memory_guardian = self.default_model
         
-    def _get_system_prompt(self, role: str, scenario: str = "General", level: str = "A1") -> str:
+    def _get_system_prompt(self, role: str, scenario: str = "General", level: str = "A1", target_phrases: List[str] = None) -> str:
         level_hints = {
-            "Level 0": "使用最简单的英语单词，必须附带中文翻译，语速极慢，多用问候语。",
-            "A1": "初级水平。语速缓慢，用词简单。在回复末尾附带关键单词的中文对照。",
+            "Level 0": "零基础。使用极简单的英语单词，语速极慢，多用基础问候语。绝对禁止在回复中罗列词汇表。",
+            "A1": "初级水平。语速缓慢，用词简单。引导用户使用场景相关的核心词组。绝对禁止在回复中罗列词汇表。",
             "A2": "入门水平。可以使用基础对话，偶尔引入一个新单词并解释。",
             "B1": "提高水平。可以进行完整的日常话题讨论。鼓励用户说长难句。",
             "B2+": "高阶水平。使用地道的俚语和职场词汇。进行深度辩论或复杂协作需求。"
@@ -21,11 +21,17 @@ class ModelGateway:
         hint = level_hints.get(level, level_hints["A1"])
         
         base_prompts = {
-            "fast_streamer": f"你是一位专业英语外教。场景：{scenario}。难度：{level} ({hint})。1. 始终用英语回复，除非用户完全听不懂。2. 只回复外教的部分，严禁模拟、代答或预设学生的对话内容。3. 保持鼓励性，适时引导用户开口。4. 必须确保单词之间有正常的空格，标点后面跟空格，严禁将单词连在一起。",
+            "fast_streamer": f"你是一位专业英语外教。场景：{scenario}。难度：{level} ({hint})。1. 始终用英语回复，除非用户完全听不懂。2. 只回复外教的部分，严禁模拟、代答或预设学生的对话内容。3. 保持鼓励性，适时引导用户开口。4. 必须确保单词之间有正常的空格，标点后面跟空格，严禁将单词连在一起。5. 如果用户的输入存在语法错误或有更地道的表达方式，请在回复末尾换行并添加 '\\n\\nCorrection: <your suggestion>'。",
             "linguistic_master": f"你是一位资深英语专家。请分析用户的输入，提供针对 {level} 水平的改进建议。重点纠正语法并推荐更地道的表达。",
             "memory_guardian": "你是一位学习分析师。分析用户的对话历史，总结其能力提升情况。"
         }
-        return base_prompts.get(role, base_prompts["fast_streamer"])
+        
+        prompt = base_prompts.get(role, base_prompts["fast_streamer"])
+        
+        if target_phrases:
+            prompt += f"\n\n### 本场景核心词汇/表达 (请在对话中自然引导用户使用，但严禁在回复末尾罗列它们): {', '.join(target_phrases)}"
+            
+        return prompt
 
     async def get_chat_response(
         self, 
@@ -35,6 +41,7 @@ class ModelGateway:
         scenario: str = "General",
         level: str = "A1",
         review_words: List[str] = None,
+        target_phrases: List[str] = None,
         stream: bool = False,
         api_key: Optional[str] = None, 
         provider: Optional[str] = None
@@ -45,7 +52,7 @@ class ModelGateway:
         print(f"[DEBUG] Gateway (Router) Request: model={target_model}, role={role}, level={level}")
 
         try:
-            system_prompt = self._get_system_prompt(role, scenario, level)
+            system_prompt = self._get_system_prompt(role, scenario, level, target_phrases)
             if review_words:
                 system_prompt += f"\n\n### 重点练习单词: {', '.join(review_words)}"
             

@@ -14,12 +14,72 @@ import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const scenes = [
-  { id: 'airport', icon: Plane, title: 'Airport Check-in', level: 'A1', desc: 'Navigate the check-in counter and security protocols.', difficulty: 1 },
-  { id: 'cafe', icon: Coffee, title: 'Barista Service', level: 'A1', desc: 'Practice complex orders and casual dialogue.', difficulty: 1 },
-  { id: 'hotel', icon: Hotel, title: 'Hotel Reservation', level: 'A2', desc: 'Handle check-in, room service, and billing inquiries.', difficulty: 2 },
-  { id: 'interview', icon: Briefcase, title: 'Engineering Interview', level: 'B2', desc: 'Simulate high-stakes technical and behavioral interviews.', difficulty: 4 },
-  { id: 'restaurant', icon: ChefHat, title: 'Fine Dining', level: 'B1', desc: 'Order from a complex menu and discuss dietary needs.', difficulty: 3 },
-  { id: 'school', icon: GraduationCap, title: 'Academic Life', level: 'A2', desc: 'Basic interactions with peers and professors.', difficulty: 2 },
+  { 
+    id: 'airport', 
+    icon: Plane, 
+    title: 'Airport Check-in', 
+    level: 'A1', 
+    difficulty: 1,
+    desc: 'Navigate the check-in counter and security protocols.',
+    setting: 'A busy international airport terminal at the check-in counter.',
+    target_phrases: ['Check-in counter', 'Boarding pass', 'Window seat', 'Carry-on luggage'],
+    initial_message: "Hello! Welcome to the airport. May I see your passport and ticket, please?"
+  },
+  { 
+    id: 'cafe', 
+    icon: Coffee, 
+    title: 'Barista Service', 
+    level: 'A1', 
+    difficulty: 1,
+    desc: 'Practice complex orders and casual dialogue.',
+    setting: 'A trendy urban coffee shop with a relaxed atmosphere.',
+    target_phrases: ['Extra shot of espresso', 'Oat milk latte', 'To go or for here?', 'Can I have some sugar?'],
+    initial_message: "Hi there! What can I get started for you today?"
+  },
+  { 
+    id: 'hotel', 
+    icon: Hotel, 
+    title: 'Hotel Reservation', 
+    level: 'A2', 
+    difficulty: 2,
+    desc: 'Handle check-in, room service, and billing inquiries.',
+    setting: 'The front desk of a modern luxury hotel.',
+    target_phrases: ['Reservation under the name', 'Complimentary breakfast', 'Room key', 'Check-out time'],
+    initial_message: "Good afternoon! How can I assist you with your stay today?"
+  },
+  { 
+    id: 'interview', 
+    icon: Briefcase, 
+    title: 'Engineering Interview', 
+    level: 'B2', 
+    difficulty: 4,
+    desc: 'Simulate high-stakes technical and behavioral interviews.',
+    setting: 'A professional office environment for a technical job interview.',
+    target_phrases: ['Scalable architecture', 'Problem-solving skills', 'Team collaboration', 'Technical challenges'],
+    initial_message: "Thanks for joining us today. Could you start by telling us about a complex project you recently worked on?"
+  },
+  { 
+    id: 'restaurant', 
+    icon: ChefHat, 
+    title: 'Fine Dining', 
+    level: 'B1', 
+    difficulty: 3,
+    desc: 'Order from a complex menu and discuss dietary needs.',
+    setting: 'An elegant high-end restaurant with a formal atmosphere.',
+    target_phrases: ['Make a reservation', 'Special of the day', 'Wine pairing', 'The bill, please'],
+    initial_message: "Good evening. Welcome to Luminary Dining. Do you have a reservation?"
+  },
+  { 
+    id: 'school', 
+    icon: GraduationCap, 
+    title: 'Academic Life', 
+    level: 'A2', 
+    difficulty: 2,
+    desc: 'Basic interactions with peers and professors.',
+    setting: 'A university campus hallway or professor\'s office.',
+    target_phrases: ['Submit the assignment', 'Office hours', 'Group project', 'Midterm exam'],
+    initial_message: "Hey! Did you finish the reading for our lecture today?"
+  },
 ];
 
 export default function SceneSelector() {
@@ -37,6 +97,8 @@ export default function SceneSelector() {
     setIsGenerating(true);
     try {
       const scenario = await forgeScenario(query);
+      // Persist the custom scenario data for the session page
+      sessionStorage.setItem('custom_scenario', JSON.stringify(scenario));
       router.push(`/session?scenario=${encodeURIComponent(scenario.title)}&isCustom=true`);
     } catch (err) {
       console.error("Forge failed", err);
@@ -78,14 +140,14 @@ export default function SceneSelector() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
             <div className="space-y-4">
                 <h1 className="display-lg text-4xl md:text-6xl flex items-center gap-4">
-                    Scenario Forge <Mic className="w-8 h-8 text-[var(--primary)]" />
+                    Scenario Forge <Mic className="w-8 h-8 text-[var(--primary)] hidden md:block" />
                 </h1>
-                <p className="opacity-60 text-lg max-w-xl">
+                <p className="opacity-60 text-base md:text-lg max-w-xl">
                     Select a curated track or use the Neural Forge to create a custom linguistic context.
                 </p>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-4">
                 <ThemeToggle />
                 <div className="flex items-center gap-3 px-4 py-2 luminary-glass luminary-border rounded-xl text-[var(--on-background)] transition-all">
                     <Filter className="w-4 h-4 text-[var(--secondary)]" />
@@ -99,17 +161,17 @@ export default function SceneSelector() {
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[var(--outline)] group-focus-within:text-[var(--primary)] transition-colors" size={20} />
           <input 
             type="text"
-            placeholder="Search scenarios or type any custom context..."
+            placeholder="Search scenarios..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleForge(searchTerm)}
-            className="w-full luminary-glass luminary-border rounded-3xl py-6 pl-16 pr-32 text-lg focus:outline-none focus:ring-4 focus:ring-[var(--primary)]/10 transition-all placeholder:text-[var(--outline)]"
+            className="w-full luminary-glass luminary-border rounded-[2rem] py-5 md:py-6 pl-14 md:pl-16 pr-24 md:pr-32 text-base md:text-lg focus:outline-none focus:ring-4 focus:ring-[var(--primary)]/10 transition-all placeholder:text-[var(--outline)]"
           />
           <button 
             onClick={() => handleForge(searchTerm)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 px-6 py-3 bg-[var(--primary)] text-[var(--on-primary)] font-black uppercase tracking-widest text-xs rounded-2xl transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-[var(--primary)]/20"
+            className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 px-4 md:px-6 py-2.5 md:py-3 bg-[var(--primary)] text-[var(--on-primary)] font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-[var(--primary)]/20"
           >
-            Forge <Zap className="w-4 h-4" />
+            Forge <Zap className="w-3 h-3 md:w-4 md:h-4" />
           </button>
         </div>
       </div>
@@ -140,7 +202,11 @@ export default function SceneSelector() {
                 "p-6 md:p-10 luminary-card flex flex-col group cursor-pointer relative overflow-hidden",
                 userLevel === scene.level ? "ring-2 ring-[var(--primary)]/20 shadow-2xl shadow-[var(--primary)]/10" : ""
             )}
-            onClick={() => router.push(`/session?scenario=${encodeURIComponent(scene.title)}`)}
+            onClick={() => {
+              // Store official scenario metadata for HUD consistency
+              sessionStorage.setItem('custom_scenario', JSON.stringify(scene));
+              router.push(`/session?scenario=${encodeURIComponent(scene.title)}`);
+            }}
           >
             <div className="flex items-center justify-between mb-8">
               <div className="w-16 h-16 bg-[var(--surface-container-high)] luminary-border rounded-2xl flex items-center justify-center text-[var(--primary)] group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-xl">
@@ -156,12 +222,12 @@ export default function SceneSelector() {
               </div>
             </div>
 
-            <h3 className="headline-md text-2xl mb-3">{scene.title}</h3>
-            <p className="opacity-60 text-sm leading-relaxed mb-10 flex-1">
+            <h3 className="headline-md text-xl md:text-2xl mb-3">{scene.title}</h3>
+            <p className="opacity-60 text-xs md:text-sm leading-relaxed mb-8 flex-1 line-clamp-2 md:line-clamp-none">
               {scene.desc}
             </p>
 
-            <button className="w-full py-4 luminary-glass luminary-border hover:bg-[var(--primary)] hover:text-[var(--on-primary)] rounded-[1.5rem] flex items-center justify-center gap-2 transition-all text-[10px] font-black uppercase tracking-widest group-hover:shadow-2xl">
+            <button className="w-full py-4 min-h-[44px] luminary-glass luminary-border hover:bg-[var(--primary)] hover:text-[var(--on-primary)] rounded-[1.5rem] flex items-center justify-center gap-2 transition-all text-[10px] font-black uppercase tracking-widest group-hover:shadow-2xl">
               Launch Session <ArrowUpRight className="w-4 h-4 shadow-sm" />
             </button>
             

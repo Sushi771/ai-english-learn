@@ -26,6 +26,7 @@ MCP: filesystem、github、puppeteer、memory、fetch、sequential-thinking、sq
 ✅ 多模型支持（GLM-4 Flash / GLM-4.5 Air 路由切换，已端到端验证）
 ✅ **Luminary 3.0 UI Overhaul**（全量 CSS 变量架构 + 毛玻璃系统 100% 覆盖）
 ✅ **Learning Streak**（基于实时 Session 数据的练习连续天数统计）
+✅ **Bug Fixes: AI Metadata & Mission Compass**（解耦 AI 气泡词汇表，补全官方场景 HUD）
 
 ## 已确认的架构决策（重要！）
 - Supabase 新项目（2024年后）JWT 算法为 ES256，不是 HS256
@@ -76,23 +77,19 @@ MCP: filesystem、github、puppeteer、memory、fetch、sequential-thinking、sq
 - 前端设置页切换 GLM-4.5 Air 后，Network Payload 确认 model_id: "glm-4.5-air" 正确传入
 - 后端返回 200 OK，对话功能正常
 
-## Phase 3 学习统计与连续天数（Streak） — 已完成
-### 核心功能
-- **实时计算**: 不再依赖 profile 的静态字段，每次请求 `/v1/stats/streak` 时后端动态扫描 `sessions` 表日期。
-- **连续判定**: 支持“今天已学”或“昨天已学”作为起点，中断即重置。
-- **UI 呈现**: Dashboard 实时瀑布流加载，支持 Loading 态渲染（`—d`）。
+## Phase 3 & Bug Fixes (2026-04-05) — 已完成
+### 1. AI 气泡元数据解耦
+- **问题**: A1 等级 AI 会在回复末尾强行附带中文单词对照，破坏对话流畅度。
+- **修复**: 移除 `llm.py` 系统提示词中的强制翻译指令。新增 `target_phrases` 内部指令流，让 AI 在对话中自然运用关键词而非罗列。
 
-### 调试记录 (2026-04-03)
-- **Streak 零值问题**:
-  - **定位**: 经 JWT 与数据库对比，发现当前浏览器登录账户与原有测试数据 UID 不匹配。
-  - **修复**: 验证了新账号产生 session 后 streak 自动变为 1d，逻辑正确。
-- **Session 持久化问题**:
-  - **问题**: 聊天页发消息时 `sessionId` 始终维持默认值 `"new"`，导致多轮对话被拆分成多个孤立的 Session。
-  - **修复**: 后端单独抽离 `/v1/session/create` 端点，前端 `session/page.tsx` 初始化时优先调用并 `setSessionId` 保存真实 ID，彻底修复了会话断层问题。
+### 2. 官方场景 Mission Compass (HUD) 增强
+- **问题**: 只有自定义场景有 HUD，官方场景进入后 Mission Compass 为空。
+- **修复**: 在 `scenes/page.tsx` 中为所有官方场景补全了 `setting` 和 `target_phrases` 元数据。
+- **同步**: 官方场景选择后同样写入 `sessionStorage`，并确保在 Session 页面读取后立即 `removeItem`（保留用户要求的清理逻辑）。
 
-## Phase 3 下一步（按优先级）
-1. ✅ Supabase Auth（已完成）
-2. ✅ 多模型支持（已完成）
-3. ✅ 流式响应优化（已完成）
-4. ✅ **Luminary 3.0 UI Overhaul** (已完成)
-5. 🔲 语音评测细节打磨 (下一阶段重点)
+### 3. 鲁棒的 TTS 文本提取
+- **修复**: `useTTS.ts` 采用 `text.split('/')[0].split('\n')[0].trim()`，兼容斜杠翻译和多行回复，确保只朗读英文原文。
+
+## 下一步（按优先级）
+1. 🔲 **语音评测细节打磨** (优化评测算法与 UI 反馈)
+2. 🔲 **场景生成多样性** (丰富 AI 锻造场景的模板)

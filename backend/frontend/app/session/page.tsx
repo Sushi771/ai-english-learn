@@ -152,6 +152,10 @@ function SessionContent() {
   const [toastMessage, setToastMessage] = useState("");
   const [isHUDExpanded, setIsHUDExpanded] = useState(false);
   const [isUltraWide, setIsUltraWide] = useState(false);
+  
+  // Task A-4: End Session Result State
+  const [sessionResult, setSessionResult] = useState<{ score: number; corrections: string[] } | null>(null);
+  const [showEndModal, setShowEndModal] = useState(false);
 
   // ── Word-collection state ────────────────────────────────────────────────
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
@@ -173,7 +177,20 @@ function SessionContent() {
     };
     handleResize();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    // VisualViewport logic for mobile keyboard handling
+    const handleViewportResize = () => {
+      if (window.visualViewport && scrollRef.current) {
+        // Adjust padding or height if needed, or just force scroll to bottom
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    };
+    window.visualViewport?.addEventListener('resize', handleViewportResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('resize', handleViewportResize);
+    };
   }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -210,23 +227,31 @@ function SessionContent() {
 
   useEffect(() => {
     const topic = searchParams.get('scenario') || searchParams.get('topic') || '咖啡馆点餐练习';
-    const custom = !!searchParams.get('isCustom') || !!sessionStorage.getItem('custom_scenario');
+    const isCustomParam = searchParams.get('isCustom') === 'true';
+    
     setRawScenario(topic);
-    setIsCustom(custom);
+    setIsCustom(isCustomParam);
 
     let initialMsg = `您好！欢迎进入【${topic}】练习。请问我们现在开始吗？`;
+    let effectiveScenarioName = topic;
     
+    // Attempt to load scenario metadata (for both custom and official tracks)
     const stored = sessionStorage.getItem('custom_scenario');
     if (stored) {
       try {
         const data = JSON.parse(stored);
-        if (data.title === topic) {
+        // Match by title or assume current if just came from selection
+        if (data.title === topic || !isCustomParam) {
           setCustomData(data);
           initialMsg = data.initial_message || initialMsg;
           setIsHUDExpanded(true);
+          effectiveScenarioName = data.title || topic;
         }
       } catch (e) {
-        console.error("Failed to parse custom scenario", e);
+        console.error("Failed to parse scenario metadata", e);
+      } finally {
+        // ALWAYS remove after reading to prevent stale data in next session
+        sessionStorage.removeItem('custom_scenario');
       }
     }
 
@@ -234,7 +259,7 @@ function SessionContent() {
 
     // 在 useEffect 初始化时：
     (async () => {
-      const sid = await createSession(customData?.title || rawScenario || "General Conversation");
+      const sid = await createSession(effectiveScenarioName);
       setSessionId(sid);
     })();
   }, [searchParams]);
@@ -293,11 +318,22 @@ function SessionContent() {
     }
   }, [selectedWord, wordTranslation]);
 
+  // Handle global key events (Esc to close drawer/modal)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (selectedWord) handleCloseDrawer();
+        if (showEndModal) setShowEndModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedWord, handleCloseDrawer, showEndModal]);
+
   // Handle click-away: close the drawer if clicking outside dialogue or the drawer itself
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Close if clicking outside the main chat message containers
       if (selectedWord && !target.closest('.ai-message-bubble') && !target.closest('.word-mini-drawer')) {
         handleCloseDrawer();
       }
@@ -352,8 +388,12 @@ function SessionContent() {
     setIsProcessing(true);
 
     try {
-      const result = await processAudio(audioBlob, sessionId, customData?.title || rawScenario);
-      // setSessionId(result.session_id); // Instruction: Don't use session_id in return
+      const result = await processAudio(
+        audioBlob, 
+        sessionId, 
+        customData?.title || rawScenario,
+        customData?.target_phrases
+      );
       
       setMessages(prev => prev.map(m => 
         m.id === tempUserMsgId 
@@ -364,7 +404,6 @@ function SessionContent() {
       setMessages(prev => [...prev, { id: Date.now() + 1, role: 'ai', content: result.reply }]);
       speak(result.reply);
 
-      // Pronunciation assessment removed in Phase 4.1 to simplify the link
     } catch (err) {
       setMessages(prev => prev.map(m => 
         m.id === tempUserMsgId ? { ...m, content: "处理失败，请重试。" } : m
@@ -407,9 +446,9 @@ function SessionContent() {
         },
         async (err) => {
           console.error("Streaming chat failed, falling back to legacy:", err);
-          // Fallback to non-streaming behavior if needed (can be implemented if sendChatMessage is still exported)
           setIsProcessing(false);
-        }
+        },
+        customData?.target_phrases
       );
     } catch (err) {
       console.error("Text chat wrapper error:", err);
@@ -421,18 +460,22 @@ function SessionContent() {
     if (isProcessing) return;
     setIsProcessing(true);
     try {
-      const res = await endSession(sessionId);
-      setToastMessage(`对话结束！本次得分：${res.score || 80} ⭐`);
-      setShowToast(true);
-      
-      // Delay redirect to allow toast to be seen
-      setTimeout(() => {
-        router.push('/');
-      }, 2000);
+      const res: any = await endSession(sessionId);
+      if (res.success) {
+        setSessionResult({
+          score: res.total_score,
+          corrections: res.corrections || []
+        });
+        setShowEndModal(true);
+      } else {
+        setToastMessage("结束对话失败，请重试");
+        setShowToast(true);
+      }
     } catch (err) {
       console.error("Failed to end session:", err);
       setToastMessage("结束对话失败，请重试");
       setShowToast(true);
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -482,8 +525,83 @@ function SessionContent() {
 
   return (
     <ProtocolGuard>
-      <div className="flex flex-col h-screen bg-[var(--background)] text-[var(--on-background)] font-inter overflow-hidden relative transition-colors duration-500">
+      <div className="flex flex-col min-h-screen bg-[var(--background)] text-[var(--on-background)] font-inter relative transition-colors duration-500">
         <Notification isVisible={showToast} message={toastMessage} onClose={() => setShowToast(false)} />
+
+        {/* End Session Modal */}
+        <AnimatePresence>
+          {showEndModal && sessionResult && (
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 md:p-12">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/60 backdrop-blur-xl"
+                onClick={() => setShowEndModal(false)}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                className="relative w-full max-w-2xl luminary-glass luminary-border p-10 md:p-14 rounded-[3.5rem] bg-surface-container/60 shadow-[0_40px_120px_rgba(0,0,0,0.5)] overflow-hidden"
+              >
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+                
+                <div className="text-center mb-12">
+                  <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-primary/20 shadow-inner">
+                    <Star size={48} className="text-primary fill-primary/30 animate-pulse" />
+                  </div>
+                  <h3 className="text-4xl font-black font-manrope tracking-tighter text-on-background uppercase">对话评估就绪</h3>
+                  <p className="text-[10px] font-black tracking-[0.3em] text-on-background/30 uppercase mt-2">Analytical Insight Complete</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                  <div className="p-8 luminary-glass luminary-border rounded-3xl text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-on-background/40 mb-2">综合同步得分</p>
+                    <div className="text-6xl font-black font-manrope text-primary tracking-tighter italic">
+                      {sessionResult.score}
+                    </div>
+                  </div>
+                  <div className="p-8 luminary-glass luminary-border rounded-3xl text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-on-background/40 mb-2">语境纠错点</p>
+                    <div className="text-6xl font-black font-manrope text-rose-400 tracking-tighter italic">
+                      {sessionResult.corrections.length}
+                    </div>
+                  </div>
+                </div>
+
+                {sessionResult.corrections.length > 0 && (
+                  <div className="mb-12 space-y-4 max-h-48 overflow-y-auto pr-4 custom-scrollbar">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">建议改进方向 | Recommendations</h4>
+                    <div className="space-y-3">
+                      {sessionResult.corrections.map((corr, idx) => (
+                        <div key={idx} className="p-5 rounded-2xl bg-white/5 border border-white/5 flex items-start gap-4">
+                          <Sparkles size={16} className="text-primary mt-1 shrink-0" />
+                          <p className="text-sm font-medium text-on-background/80 leading-relaxed italic">{corr}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col md:flex-row gap-4 pt-4">
+                  <button
+                    onClick={() => router.push('/')}
+                    className="flex-1 bg-primary text-white dark:text-on-background py-6 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  >
+                    存入档案并返回控制台
+                  </button>
+                  <button
+                    onClick={() => setShowEndModal(false)}
+                    className="flex-1 bg-white/5 py-6 rounded-2xl text-on-background/60 font-black uppercase tracking-[0.2em] text-xs hover:bg-white/10 transition-all"
+                  >
+                    查看对话记录
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Ambient background */}
         <div className="fixed inset-0 pointer-events-none opacity-40">
@@ -543,11 +661,11 @@ function SessionContent() {
         </header>
 
         {/* Main chat area */}
-        <div className="flex-1 flex overflow-hidden pt-24 pb-40">
+        <div className="flex-1 flex pt-24 pb-40">
           <main
             ref={scrollRef}
             className={cn(
-              "h-full overflow-y-auto scroll-smooth custom-scrollbar relative z-10 transition-all duration-700",
+              "flex-1 overflow-y-auto scroll-smooth custom-scrollbar relative z-10 transition-all duration-700",
               isUltraWide && isHUDExpanded ? "flex-[1.5] px-12" : "flex-1 px-6 lg:px-12 flex justify-center"
             )}
           >
