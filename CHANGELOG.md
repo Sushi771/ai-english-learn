@@ -2,7 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.0] - 2026-04-21
+
+### Added
+- **Session Intelligence:**
+    - New `/v1/session/end` endpoint with dynamic scoring based on AI-generated corrections.
+    - Post-session Summary Modal displaying "Correction Highlights" and "Experience Gained".
+    - Automatic redirection back to the dashboard after session completion.
+- **Cognitive Reinforcement:**
+    - **Streak Tracking:** Backend implementation and Dashboard UI for daily learning streaks.
+    - **Proactive Reviews:** "Due Tomorrow" notification system on the Home/Dashboard pages for Vocabulary Bank items.
+- **Security & Infrastructure:**
+    - **JWT-Secured TTS:** Migrated Speech-to-Text endpoint behind Supabase Auth verification.
+    - **Middleware Stability:** Optimized auth checks using `supabase.auth.getUser()` for improved reliability.
+
+### Fixed
+- **Voice Experience:** Re-engineered `useTTS` hook to prevent audio overlapping using `requestIdRef` and `Audio` object reuse.
+- **UI/UX Refinements:**
+    - Resolved Scene Title truncation issues on mobile devices in the Session page.
+    - Fixed Vocabulary Bank bugs preventing word deletion and translation persistence.
+    - Optimized session creation logic to prevent database write failures.
+
 ## [2.6.0] - 2026-04-04
+
 
 ### Fixed
 - **WordBank Persistence (SM-2):**

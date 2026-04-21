@@ -10,6 +10,7 @@ export const useTTS = () => {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const objectUrlRef = useRef<string | null>(null);
+    const requestIdRef = useRef(0);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -40,6 +41,7 @@ export const useTTS = () => {
 
         // Interrupt existing speech
         stop();
+        const currentId = ++requestIdRef.current;
 
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -72,12 +74,27 @@ export const useTTS = () => {
                 throw new Error("TTS fetch failed");
             }
 
+            if (currentId !== requestIdRef.current) return;
+
             const blob = await response.blob();
+            if (currentId !== requestIdRef.current) return;
+
             const url = URL.createObjectURL(blob);
             objectUrlRef.current = url;
 
-            const audio = new Audio(url);
-            audioRef.current = audio;
+            if (!audioRef.current) {
+                audioRef.current = new Audio();
+            }
+            const audio = audioRef.current;
+
+            // Re-check id before committing to playing
+            if (currentId !== requestIdRef.current) {
+                URL.revokeObjectURL(url);
+                return;
+            }
+
+            audio.pause();
+            audio.src = url;
 
             audio.onplay = () => setIsSpeaking(true);
             audio.onended = () => {

@@ -56,8 +56,9 @@ export async function middleware(req: NextRequest) {
   );
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
+  const session = user;
 
   // If user is not signed in and the current path is not /login or /register,
   // redirect them to /login

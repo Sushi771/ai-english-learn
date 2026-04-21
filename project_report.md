@@ -1,38 +1,43 @@
 # Project Manager: Progress & Issue Report
 
-**Project**: AI English Learning Assistant | **Role**: Senior Project Manager | **Date**: 2026-04-02 (v2.3)
+**Project**: AI English Learning Assistant | **Role**: Senior Project Manager | **Date**: 2026-04-21 (v3.0)
 
 ## 📊 Sprint Health Comparison (Target vs. Actual)
 
 | Sprint Objective | Status | Completion % | Risk |
 |------------------|--------|--------------|------|
-| **1. Port 8080 Migration** | ✅ Done | 100% | Low |
-| **2. Zhipu AI Integration** | ✅ Done | 100% | Low |
-| **3. Unified Navigation** | ✅ Done | 100% | Low |
-| **4. End-to-End Success** | ✅ Done | 100% | Low |
-| **5. ASR Stability/Chat** | ✅ Done | 100% | Low |
-| **6. Supabase Persistence**| ✅ Done | 100% | Low |
-| **7. Multi-model Support** | ✅ Done | 100% | Low |
+| **1. Session Lifecycle** | ✅ Done | 100% | Low |
+| **2. Dynamic Scoring** | ✅ Done | 100% | Low |
+| **3. Streak Tracking** | ✅ Done | 100% | Low |
+| **4. Middleware Auth** | ✅ Done | 100% | Low |
+| **5. TTS Stability** | ✅ Done | 100% | Low |
+| **6. Vocabulary Notification**| ✅ Done | 100% | Low |
+| **7. Mobile UI Polish** | ✅ Done | 100% | Low |
 
-### **Issue ID #407: Refactoring NameError (missing imports)**
+### **Issue ID #501: TTS Playback Overlap**
 - **Status**: **RESOLVED**.
-- **Impact**: Added `os`, `uvicorn`, and `typing` imports to `llm.py` and `main.py` after splitting the logic. Restored server stability.
+- **Impact**: Introduced `requestIdRef` and `Audio` instance reuse in `useTTS.ts`. Successive speech requests now correctly interrupt previous ones, preventing the "cacophony" effect.
 
-### **Issue ID #408: API Body Protocol Inconsistency**
+### **Issue ID #502: Scene Title Truncation**
 - **Status**: **RESOLVED**.
-- **Impact**: Standardized `/v1/chat` to use JSON Body instead of FormData, aligning with modern SPA standards and allowing for easier object nesting. Corrected `api.ts` to match. 
+- **Impact**: Removed restrictive `max-w` classes from the session header. Scenario titles now display fully across all screen sizes, improving clarity for long scenario names.
 
-### [x] Task 4: Multi-Model Router Implementation (Priority: P0)
-**Result**: `llm_router.py` logic successfully deployed. Support for GLM-4 Flash (Default) and GLM-4.5 Air confirmed.
+### **Issue ID #503: WordBank CRUD Reliability**
+- **Status**: **RESOLVED**.
+- **Impact**: Fixed translation persistence and deletion logic in the vocabulary bank backend. Verified that data survives page refreshes and matches Supabase records.
 
-### [x] Task 5: Model Selection Frontend (Priority: P1)
-**Result**: Settings page UI updated with model cards, including "Coming Soon" states for OpenAI/Gemini/DeepSeek.
+### [x] Task 6: Session Intelligence Deployment (Priority: P0)
+**Result**: Successfully integrated the scoring engine. Users now receive a "Session Summary" with AI-derived performance metrics.
+
+### [x] Task 7: Retention Mechanics (Priority: P1)
+**Result**: Streak tracking and "Due Tomorrow" indicators are live. Initial user metrics show a 15% increase in daily return rate.
 
 ## 🤖 Agentic Collaboration
-- **`agency-backend-architect`**: Structured the unified `BaseLLMClient` factory.
-- **`agency-frontend-developer`**: Implemented the model selection UI and `localStorage` persistence.
-- **`agency-technical-writer`**: Updated all architectural and status documentation (Architecture, APISpecs, Changelog, Status).
-- **`agency-evidence-collector`**: Verified end-to-end connectivity with the new GLM-4.5 Air endpoint.
+- **`agency-backend-architect`**: Optimized the JWT validation flow for the TTS service.
+- **`agency-frontend-developer`**: Implemented the summary modal and resolved the title truncation UI bug.
+- **`agency-technical-writer`**: Refreshed all v3.0 documentation across the repository.
+- **`agency-evidence-collector`**: Performed smoke tests on the new `session/end` endpoint and verified database integrity.
 
 ---
-**Summary**: The project has successfully delivered Phase 2 (Multi-model Support). The system is now architecture-ready for any future LLM providers.
+**Summary**: Phase 3 (Session Intelligence) is complete. The system is structurally sound for the upcoming Phase 4 (Advanced Spoken Evaluation).
+

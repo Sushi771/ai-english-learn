@@ -621,7 +621,7 @@ function SessionContent() {
                 <ArrowLeft size={20} />
               </button>
               <div className="flex flex-col">
-                <h2 className="display-lg text-lg md:text-xl font-bold uppercase tracking-tight text-[var(--on-background)] truncate max-w-[150px] md:max-w-none">
+                <h2 className="display-lg text-lg md:text-xl font-bold uppercase tracking-tight text-[var(--on-background)]">
                   {rawScenario}
                 </h2>
                 <div className="flex items-center gap-3">
