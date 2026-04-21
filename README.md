@@ -1,4 +1,4 @@
-# AI English Assistant (智学英语 AI) v3.1 - Synaptic Sync Release 🧠
+# AI English Assistant (智学英语 AI) v3.2 - Analytics Pulse Release 📊
 
 一款专为中国用户打造的、基于 **智谱 AI (Zhipu AI)** 与 **Azure 发音评测** 技术的端到端英语学习助手。系统采用全新的 **"Luminary 3.0" (双生灵光)** 视觉系统，提供极速响应的毛玻璃界面、CSS 变量驱动的主題切换与深度 HUD 交互体验。
 
@@ -11,23 +11,26 @@
 - [x] **沉浸式闪卡复习**: 基于 Framer Motion 的 3D 翻转卡片逻辑，支持掌握程度标记与 SM-2 动态调度。 ✅
 - [x] **Session 评估引擎**: 会话结束自动生成评分、纠错汇总与学习成就，助力认知固化。 ✅
 - [x] **成长大盘 & HUD**: 支持学习连续天数 (Streak) 追踪、任务罗盘与明日到期词汇预警。 ✅
+- [x] **学习统计仪表盘 (Stats Dashboard)**: 全新 `/dashboard/stats` 页面，可视化累计场次、词汇掌握率环形图与 14 天复习趋势柱状图。 ✅
 
-## 📈 Milestone Completion (v3.1)
+## 📈 Milestone Completion (v3.2)
 
-本项目已完成 **Session Intelligence (会话智能化)** 阶段：
-- **Synaptic Sync**: 完美闭环了“对话-翻译-评分-复习”的学习全路径。
+本项目已完成 **Analytics Pulse (数据可视化)** 阶段：
+- **Stats Dashboard**: 新增学习统计页面，用户可查看累计场次、词汇掌握率与 14 天复习趋势。
+- **Synaptic Sync**: 完美闭环了"对话-翻译-评分-复习-统计"的学习全路径。
 - **Performance**: 全量启用 SSE 流式响应与前端缓存，首屏交互延迟降低 40%。
 
 ## 🚀 Phase 3 & 4 Roadmap (路线图)
 
 - [x] **Phase 3: Session Intelligence**: 完成评分引擎、纠错总结与连续学习统计。
 - [x] **AI Bubble Translation**: 完成安全翻译端点、本地缓存及 Premium 视觉动画。
+- [x] **Learning Stats Dashboard**: 完成统计 API、Recharts 可视化与响应式布局。
 - [ ] **Phase 4: Advanced Spoken Evaluation**: 引入细粒度音素评分与多维度口语诊断。
 - [ ] **Social Motivation**: 勋章墙、成就分享与全球排行榜。
 
 ## 🛠️ 技术栈 (Tech Stack)
 
-- **前端**: Next.js 15.3.0, Tailwind CSS v4, Framer Motion, Wavesurfer.js.
+- **前端**: Next.js 15.3.0, Tailwind CSS v4, Framer Motion, Recharts, Wavesurfer.js.
 - **后端**: FastAPI (Python 3.11+), Supabase (PostgreSQL), SQLite (Local Cache).
 - **引擎**: 智谱 ASR/GLM-4 (LLM), Zhipu TTS, Azure Pronunciation Assessment.
 
@@ -49,5 +52,6 @@
 - **`agency-ux-architect`**: Luminary 设计系统负责人。
 - **`agency-senior-developer`**: React 交互与状态管理负责人。
 - **`agency-project-shepherd`**: 文档与 MVP 闭环交付负责人。
+- **`agency-analytics-reporter`**: 学习统计仪表盘数据可视化负责人。
 
-*Last Synchronized by Agentic Workflow at: 2026-04-22 (v3.1 Synaptic Sync Update)*
+*Last Synchronized by Agentic Workflow at: 2026-04-22 (v3.2 Analytics Pulse Update)*

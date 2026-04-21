@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.0] - 2026-04-22
+
+### Added
+- **Learning Stats Dashboard**:
+    - New `/dashboard/stats` visualization page using Recharts.
+    - Integrated "Total Sessions" and "Vocab Mastery Rate" (SVG ring) modules.
+    - Added "14-Day Review Trend" bar chart with interactive tooltips.
+    - Created responsive sidebar entry card in AIDashboard.
+- **Backend Analytics**:
+    - New `GET /v1/stats/summary` endpoint providing session counts, mastery rates, and 14-day history.
+    - Centralized routing structure in `backend/routes/`.
+- **UI/UX**:
+    - Added `--surface-variant` CSS tokens for consistent skeleton and component styling.
+
 ## [3.1.0] - 2026-04-22
 
 ### Added

@@ -16,7 +16,8 @@ import {
   Compass,
   ArrowUpRight,
   TrendingUp,
-  BrainCircuit
+  BrainCircuit,
+  BarChart3
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -328,6 +329,30 @@ const AIDashboard = ({ onStartSession, onOpenWordBank }: AIDashboardProps) => {
                 <p className="text-sm italic opacity-70 leading-relaxed font-medium">
                     "Your synthesis of <span className="text-[var(--on-background)]">technical dialect</span> is evolving. I've prepared a Silicon Valley board meeting scenario for your next immersion."
                 </p>
+            </motion.div>
+
+            {/* Learning Stats Entry */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                onClick={() => router.push('/dashboard/stats')}
+                className="p-8 luminary-card cursor-pointer group hover:bg-[var(--surface-bright)]/50"
+            >
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-[var(--surface-container-high)] flex items-center justify-center text-[var(--secondary)] group-hover:scale-110 transition-transform">
+                            <BarChart3 className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-base mb-0.5">学习统计</h4>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">View Detailed Analytics</p>
+                        </div>
+                    </div>
+                    <div className="p-2 rounded-full border luminary-border opacity-0 group-hover:opacity-100 transition-all">
+                        <ChevronRight size={16} />
+                    </div>
+                </div>
             </motion.div>
         </aside>
       </main>

@@ -30,6 +30,7 @@
   --surface-container: #f0f0fd;
   --surface-container-high: #e2e2f0;
   --surface-container-low: #fafaff;
+  --surface-variant: #dddde8;
   
   --outline: #737580;
   --outline-variant: #aaaab7;
@@ -56,6 +57,7 @@
   --surface-container: #171924;
   --surface-container-high: #1c1f2b;
   --surface-container-low: #11131d;
+  --surface-variant: #2a2d3d;
   
   --outline: #737580;
   --outline-variant: #464752;

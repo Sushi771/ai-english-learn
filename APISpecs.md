@@ -1,4 +1,4 @@
-# AI English Learn - API Specifications (v2.3)
+# AI English Learn - API Specifications (v3.2)
 
 ## 1. Base URL
 `https://api.ai-english.example.com/v1`
@@ -58,6 +58,20 @@ All requests must include a Bearer Token in the header (Supabase Auth JWT):
     *   **Desc**: Add a word manually.
 *   **PATCH `/v1/word-bank/{word_id}/status`**
     *   **Desc**: Update word status (mastered/reviewing/new) using SM-2 algorithm.
+
+### 3.6 Analytics & Stats
+*   **GET `/v1/stats/summary`**
+    *   **Desc**: Get aggregate learning statistics.
+    *   **Output (JSON)**:
+        ```json
+        {
+          "total_sessions": 12,
+          "vocab_mastery_rate": 0.68,
+          "review_history": [
+            { "date": "2026-04-09", "count": 3 }
+          ]
+        }
+        ```
 
 ## 4. Error Codes
 | Code | Meaning |

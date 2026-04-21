@@ -29,8 +29,10 @@ from services.placement_engine import placement_engine
 from services.foundation import foundation_service
 from services.auth_service import get_current_user
 from services.llm_router import get_llm_client
+from routes.stats import router as stats_router
 
 app = FastAPI(title="AI English Learning Assistant API")
+app.include_router(stats_router)
 
 # Configure CORS
 app.add_middleware(

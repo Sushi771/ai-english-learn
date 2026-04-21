@@ -14,6 +14,7 @@
 | **6. Vocabulary Notification**| ✅ Done | 100% | Low |
 | **7. Mobile UI Polish** | ✅ Done | 100% | Low |
 | **8. Bubble Translation**| ✅ Done | 100% | Low |
+| **9. Stats Dashboard** | ✅ Done | 100% | Low |
 
 ### **Issue ID #501: TTS Playback Overlap**
 - **Status**: **RESOLVED**.
@@ -37,7 +38,8 @@
 - **`agency-backend-architect`**: Optimized the JWT validation flow for the TTS service.
 - **`agency-frontend-developer`**: Implemented the summary modal and resolved the title truncation UI bug.
 - **`agency-technical-writer`**: Refreshed all v3.0 documentation across the repository.
-- **`agency-evidence-collector`**: Performed smoke tests on the new `session/end` endpoint and verified database integrity.
+- **`agency-analytics-reporter`**: Designed and implemented the Recharts visualization logic for the stats dashboard.
+- **`agency-evidence-collector`**: Performed smoke tests on the new `v1/stats/summary` endpoint.
 
 ---
 **Summary**: Phase 3 (Session Intelligence) is complete. The system is structurally sound for the upcoming Phase 4 (Advanced Spoken Evaluation).
