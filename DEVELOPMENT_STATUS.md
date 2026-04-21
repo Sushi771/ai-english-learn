@@ -17,6 +17,7 @@
 - [x] **流式响应优化 (Streaming)**: 全面启用 SSE 以降低首字延迟。 ✅
 - [x] **Session 评估引擎 (v3.0)**: 实现了会话结束时的动态评分、纠错汇总与学习成就系统。 ✅
 - [x] **学习增长追踪**: 实现了 Daily Streak 追踪与 "Due Tomorrow" 词汇预警系统。 ✅
+- [x] **AI Bubble Translation (v3.1)**: 实现了会话内气泡翻译、缓存机制与动态动画效果。 ✅
 
 ## 3. 下一阶段路线图 (Phase 4 Roadmap)
 - [ ] **高阶口语评测**: 引入细粒度的发音评分 (Pronunciation Scoring) 与重音检测。
@@ -24,9 +25,10 @@
 - [ ] **多端适配固化**: 针对移动端 App 的 WebView 体验进行专项优化。
 
 ## 4. 最近更新记录 (Recent Updates)
+- [x] **AI Bubble Translation (v3.1)**: 引入了 `v1/translate` 安全端点，实现了会话内翻译缓存与 Premium 视觉动画。
 - [x] **Session Intelligence (v3.0)**: 引入了 `session/end` 端点，基于 AI 纠错内容生成量化评分，并增加了总结弹窗。
 - [x] **Cognitive Features (v3.0)**: 上线了连续学习天数 (Streak) 统计与词汇复习提醒功能。
-- [x] **Platform Security (v3.0)**: 将 TTS 接口置于 JWT 保护之下，并优化了中间件的 User 验证逻辑。
+- [x] **Platform Security (v3.1)**: 将翻译接口置于 JWT 保护之下，确保 API 资源调用的合法性。
 - [x] **Stability Fixes**: 解决了 ASR 录制重叠、场景标题遮挡及词库操作失效等 UI/UX 问题。
 
 ## 5. 参与代理 (Active Agents)
@@ -36,5 +38,5 @@
 - **`agency-technical-writer`**: 负责全量文档同步与 Changelog 固化。
 
 ---
-*Last Refined by Agentic Workflow at: 2026-04-21 23:45 (v3.0 Session Intelligence Release)*
+*Last Refined by Agentic Workflow at: 2026-04-22 00:15 (v3.1 AI Bubble Translation Release)*
 

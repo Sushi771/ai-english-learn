@@ -28,6 +28,7 @@ from services.scenario_engine import scenario_engine
 from services.placement_engine import placement_engine
 from services.foundation import foundation_service
 from services.auth_service import get_current_user
+from services.llm_router import get_llm_client
 
 app = FastAPI(title="AI English Learning Assistant API")
 
@@ -234,6 +235,30 @@ async def text_to_speech(
                 yield chunk["data"]
 
     return StreamingResponse(generate(), media_type="audio/mpeg")
+
+@app.post("/v1/translate")
+async def translate_text(
+    data: Dict[str, str],
+    user_id: str = Depends(get_current_user)
+):
+    """Translate English text to Chinese for AI bubbles."""
+    text = data.get("text")
+    if not text:
+        raise HTTPException(status_code=422, detail="Text is required")
+    
+    try:
+        client = get_llm_client("glm-4-flash")
+        system_prompt = "你是翻译助手，将用户输入的英文翻译成简洁的中文，只返回译文，不要解释"
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text}
+        ]
+        
+        translation = await client.chat(messages)
+        return {"translation": translation}
+    except Exception as e:
+        print(f"Translation Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/v1/dashboard/stats")
 async def get_dashboard_stats(user_id: str = Depends(get_current_user)):

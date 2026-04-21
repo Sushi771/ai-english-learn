@@ -18,7 +18,8 @@ import {
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import ProtocolGuard from '../../components/ProtocolGuard';
-import { processAudio, sendMessageStream, fetchWordTranslation, addToWordBank, PronunciationWord, createSession, endSession } from '@/lib/api';
+import { processAudio, sendMessageStream, fetchWordTranslation, addToWordBank, translateText, PronunciationWord, createSession, endSession } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 import { useTTS } from '@/hooks/useTTS';
 import Notification from '@/components/Notification';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -167,6 +168,11 @@ function SessionContent() {
   const [savedWords, setSavedWords] = useState<Set<string>>(new Set());
   // exampleContext: the full message content where the word was clicked
   const wordContextRef = useRef<string>("");
+  
+  // Translation state for each message
+  const [translations, setTranslations] = useState<Record<number, { loading: boolean, text: string, visible: boolean }>>({});
+  // In-session translation cache
+  const translationCache = useRef<Record<string, string>>({});
   // ────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -317,6 +323,58 @@ function SessionContent() {
       setIsSavingWord(false);
     }
   }, [selectedWord, wordTranslation]);
+  
+  const handleTranslate = useCallback(async (msgId: number, rawContent: string) => {
+    // If translation exists in state, toggle visibility
+    if (translations[msgId]?.text) {
+      setTranslations(prev => ({
+        ...prev,
+        [msgId]: { ...prev[msgId], visible: !prev[msgId].visible }
+      }));
+      return;
+    }
+
+    // Extract English part (handling "Hello / 你好" case)
+    const englishText = rawContent.split('/')[0].trim();
+
+    // Check in-session cache first
+    if (translationCache.current[englishText]) {
+      setTranslations(prev => ({
+        ...prev,
+        [msgId]: { loading: false, text: translationCache.current[englishText], visible: true }
+      }));
+      return;
+    }
+
+    // Otherwise, translate
+    setTranslations(prev => ({
+      ...prev,
+      [msgId]: { loading: true, text: '', visible: true }
+    }));
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+      
+      const translation = await translateText(englishText, token);
+      
+      // Save to cache
+      if (translation) {
+        translationCache.current[englishText] = translation;
+      }
+
+      setTranslations(prev => ({
+        ...prev,
+        [msgId]: { loading: false, text: translation, visible: true }
+      }));
+    } catch (err) {
+      console.error("Translation error:", err);
+      setTranslations(prev => ({
+        ...prev,
+        [msgId]: { loading: false, text: "翻译失败, 请稍后再试", visible: true }
+      }));
+    }
+  }, [translations]);
 
   // Handle global key events (Esc to close drawer/modal)
   useEffect(() => {
@@ -726,6 +784,52 @@ function SessionContent() {
                           </div>
                         )}
                       </div>
+
+                      {/* Translation Section */}
+                      {msg.role === 'ai' && (
+                        <div className="mt-2 flex flex-col items-start">
+                          {!(index === messages.length - 1 && isProcessing) && (
+                            <button
+                              onClick={() => handleTranslate(msg.id, msg.content)}
+                              className={cn(
+                                "flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300",
+                                "text-[10px] font-black uppercase tracking-[0.15em] mb-2",
+                                translations[msg.id]?.visible 
+                                  ? "bg-primary/20 text-primary border border-primary/20 shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]" 
+                                  : "bg-white/5 text-on-background/40 hover:text-primary hover:bg-primary/10 border border-transparent"
+                              )}
+                            >
+                              <Sparkles size={10} className={cn(translations[msg.id]?.loading ? "animate-spin" : "")} />
+                              {translations[msg.id]?.visible ? "收起 ↩" : "译 TRANSLATE"}
+                            </button>
+                          )}
+                          
+                          <AnimatePresence>
+                            {translations[msg.id]?.visible && (translations[msg.id]?.text || translations[msg.id]?.loading) && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0, y: -10, filter: "blur(5px)" }}
+                                animate={{ opacity: 1, height: "auto", y: 0, filter: "blur(0px)" }}
+                                exit={{ opacity: 0, height: 0, y: -10, filter: "blur(5px)" }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                className="overflow-hidden w-full"
+                              >
+                                <div className="text-sm text-on-background/70 px-5 py-4 luminary-glass-filled luminary-border rounded-2xl mb-4 max-w-full shadow-lg border-white/5 bg-on-background/5">
+                                  {translations[msg.id]?.loading ? (
+                                    <div className="flex items-center gap-3 py-1">
+                                      <Loader2 size={14} className="animate-spin text-primary" />
+                                      <span className="animate-pulse font-black tracking-widest text-[10px] uppercase opacity-50">Synchronizing linguistic data...</span>
+                                    </div>
+                                  ) : (
+                                    <p className="leading-relaxed font-medium italic">
+                                      {translations[msg.id]?.text}
+                                    </p>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
 
                       {/* Word Mini-Drawer — visible when this bubble's word is selected */}
                       <AnimatePresence>

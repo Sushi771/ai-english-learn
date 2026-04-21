@@ -1,6 +1,6 @@
 # Project Manager: Progress & Issue Report
 
-**Project**: AI English Learning Assistant | **Role**: Senior Project Manager | **Date**: 2026-04-21 (v3.0)
+**Project**: AI English Learning Assistant | **Role**: Senior Project Manager | **Date**: 2026-04-22 (v3.1)
 
 ## 📊 Sprint Health Comparison (Target vs. Actual)
 
@@ -13,6 +13,7 @@
 | **5. TTS Stability** | ✅ Done | 100% | Low |
 | **6. Vocabulary Notification**| ✅ Done | 100% | Low |
 | **7. Mobile UI Polish** | ✅ Done | 100% | Low |
+| **8. Bubble Translation**| ✅ Done | 100% | Low |
 
 ### **Issue ID #501: TTS Playback Overlap**
 - **Status**: **RESOLVED**.

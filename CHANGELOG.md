@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] - 2026-04-22
+
+### Added
+- **AI Bubble Translation**:
+    - On-demand translation for AI messages within the chat session.
+    - In-session translation caching to optimize performance and reduce API latency.
+    - Premium UI with glassmorphism styling and Framer Motion animations (height/opacity/blur).
+    - Synchronized loading state with "Sparkles" visual feedback.
+- **Security**: 
+    - Protected `/v1/translate` endpoint with JWT authentication using `Depends(get_current_user)`.
+
+### Changed
+- **API Strategy**: Standardized on relative paths for `/v1/*` endpoints to support Next.js proxy rewrites.
+
 ## [3.0.0] - 2026-04-21
 
 ### Added

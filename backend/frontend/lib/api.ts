@@ -251,6 +251,29 @@ export async function fetchWordTranslation(word: string, currentSessionId: strin
 }
 
 /**
+ * Translate AI message content to Chinese.
+ */
+export async function translateText(text: string, accessToken: string): Promise<string> {
+  try {
+    const response = await fetch(`/v1/translate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`
+      },
+      body: JSON.stringify({ text })
+    });
+    
+    if (!response.ok) return "";
+    const data = await response.json();
+    return data.translation || "";
+  } catch (err) {
+    console.error("Translation error:", err);
+    return "";
+  }
+}
+
+/**
  * Add a word to the user's word bank.
  */
 export async function addToWordBank(
